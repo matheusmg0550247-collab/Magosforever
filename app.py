@@ -1,6 +1,7 @@
 import streamlit as st
 from datetime import datetime, timedelta
 import locale
+import textwrap
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(
@@ -19,35 +20,14 @@ except:
     except:
         pass
 
-# --- ESTILOS CSS (Preto e Branco + Ajustes) ---
+# --- ESTILOS CSS ---
 st.markdown("""
 <style>
-    /* Fundo Geral */
-    .stApp {
-        background-color: #000000;
-        color: #e0e0e0;
-    }
+    .stApp { background-color: #000000; color: #e0e0e0; }
+    .stSelectbox > div > div { background-color: #1a1a1a; color: white; border: 1px solid #444; }
+    .stSelectbox > label { text-align: center; width: 100%; }
+    .stTextInput > div > div > input { background-color: #1a1a1a; color: white; border: 1px solid #444; text-align: center; }
     
-    /* Inputs e Selectbox */
-    .stSelectbox > div > div {
-        background-color: #1a1a1a;
-        color: white;
-        border: 1px solid #444;
-    }
-    /* Centralizar texto dentro do selectbox se possível */
-    .stSelectbox > label {
-        text-align: center;
-        width: 100%;
-    }
-    
-    .stTextInput > div > div > input {
-        background-color: #1a1a1a;
-        color: white;
-        border: 1px solid #444;
-        text-align: center;
-    }
-    
-    /* Botões */
     .stButton > button {
         background-color: #ffffff !important;
         color: #000000 !important;
@@ -63,45 +43,7 @@ st.markdown("""
         transform: translateY(-2px);
     }
 
-    /* Cards de Irmãos */
-    .brother-card {
-        background-color: #121212;
-        border: 1px solid #333;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 6px rgba(255, 255, 255, 0.05);
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-    }
-    .card-title {
-        font-weight: 700;
-        font-size: 1.15em;
-        color: white;
-        border-bottom: 1px solid #444;
-        padding-bottom: 8px;
-        margin-bottom: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .card-info {
-        font-size: 0.95em;
-        color: #ccc;
-        margin-bottom: 5px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .card-family {
-        margin-top: auto;
-        padding-top: 12px;
-        border-top: 1px dashed #333;
-        font-size: 0.85em;
-        color: #888;
-    }
-    
-    /* Cards de Resultado */
+    /* Cards */
     .result-card {
         background-color: #1a1a1a;
         border-left: 4px solid white;
@@ -110,37 +52,35 @@ st.markdown("""
         margin-bottom: 5px;
     }
     .result-header {
-        display: flex;
-        justify-content: space-between;
-        color: #888;
-        font-size: 0.8em;
-        text-transform: uppercase;
-        font-weight: bold;
+        display: flex; justify-content: space-between;
+        color: #888; font-size: 0.8em; text-transform: uppercase; font-weight: bold;
         margin-bottom: 5px;
     }
     
-    /* Ajuste para o st.code (Caixa de Mensagem) */
-    code {
-        white-space: pre-wrap !important;
-        font-family: 'Courier New', Courier, monospace !important;
-        font-size: 1rem !important;
+    /* Brother Card */
+    .brother-card {
+        background-color: #121212; border: 1px solid #333; padding: 20px;
+        border-radius: 10px; margin-bottom: 20px; height: 100%;
+        display: flex; flex-direction: column;
+        box-shadow: 0 4px 6px rgba(255, 255, 255, 0.05);
     }
-    
-    /* Títulos */
-    h1, h2, h3 {
-        color: white !important;
-        font-family: 'Segoe UI', sans-serif;
+    .card-title {
+        font-weight: 700; font-size: 1.15em; color: white;
+        border-bottom: 1px solid #444; padding-bottom: 8px; margin-bottom: 12px;
+        text-transform: uppercase; letter-spacing: 0.5px;
     }
+    .card-info { font-size: 0.95em; color: #ccc; margin-bottom: 5px; }
+    .card-family { margin-top: auto; padding-top: 12px; border-top: 1px dashed #333; font-size: 0.85em; color: #888; }
 
-    /* Ocultar elementos padrão */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+    /* Code Block Tweak */
+    code { white-space: pre-wrap !important; font-family: 'Courier New', monospace !important; font-size: 1rem !important; }
+    
+    h1, h2, h3 { color: white !important; font-family: 'Segoe UI', sans-serif; }
+    #MainMenu, footer, header { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
 
 # --- DADOS DOS IRMÃOS ---
-
 BROTHERS = [
     { 
         "name": "Vinicius Mateus dos Reis", "birth": "27/02", "wedding": "03/02", "init": "21/03", "job": "Contador", "city": "Belo Horizonte",
@@ -187,8 +127,8 @@ BROTHERS = [
         "family": { "wife": "Iracema da Conceição Theodoro", "children": [], "parents": ["Maurilio Germano Theodoro", "Conceição Fernandes O. Theodoro"] }
     },
     { 
-        "name": "Matheus Eustáquio Gomes de Faria", "birth": "02/12", "wedding": None, "init": "11/12", "job": "Oficial Judiciário", "city": "Belo Horizonte",
-        "family": { "wife": None, "children": [], "parents": ["José Eustáquio de Faria (18/03)", "Sílvia de Fátima Faria (18/06)"] }
+        "name": "Matheus Eustáquio Gomes de Faria", "birth": "02/12", "wedding": "28/10", "init": "11/12", "job": "Oficial Judiciário", "city": "Belo Horizonte",
+        "family": { "wife": "Ana Paula Lopes de Souza (19/04)", "children": [], "parents": ["José Eustáquio de Faria (18/03)", "Sílvia de Fátima Faria (18/06)"] }
     },
     { 
         "name": "Mário Edésio Araújo Melo", "birth": "04/05", "wedding": None, "init": "27/10", "job": "Militar Reformado", "city": "Dom Cavati",
@@ -264,63 +204,26 @@ BROTHERS = [
     }
 ]
 
-# --- GERADOR DINÂMICO DE EVENTOS ---
-def get_master_events():
-    events = []
-    
-    # 1. Eventos dos Irmãos
-    for bro in BROTHERS:
-        if bro['birth']: events.append({"date": bro['birth'], "type": "Aniversário", "name": bro['name']})
-        if bro['wedding']: events.append({"date": bro['wedding'], "type": "Casamento", "name": bro['name']})
-        if bro['init']: events.append({"date": bro['init'], "type": "Iniciação", "name": bro['name']})
-        
-        # 2. Eventos da Família
-        fam = bro['family']
-        if fam:
-            if fam.get('wife') and '(' in str(fam['wife']):
-                name_part = fam['wife'].split('(')[0].strip()
-                date_part = fam['wife'].split('(')[1].replace(')', '').strip()
-                events.append({"date": date_part, "type": "Família", "name": name_part, "relatedTo": bro['name']})
-            
-            if fam.get('children'):
-                for child in fam['children']:
-                    if '(' in child:
-                        name_part = child.split('(')[0].strip()
-                        date_part = child.split('(')[1].replace(')', '').strip()
-                        events.append({"date": date_part, "type": "Família", "name": name_part, "relatedTo": bro['name']})
-                        
-            if fam.get('parents'):
-                for parent in fam['parents']:
-                    if '(' in parent:
-                        name_part = parent.split('(')[0].strip()
-                        date_part = parent.split('(')[1].replace(')', '').strip()
-                        events.append({"date": date_part, "type": "Família", "name": name_part, "relatedTo": bro['name']})
-
-    # 3. Eventos de Cidade
-    cities = [
-        {"city": "Belo Horizonte", "date": "12/12"},
-        {"city": "Ipatinga", "date": "29/04"},
-        {"city": "Abaeté", "date": "05/11"},
-        {"city": "Braúnas", "date": "12/12"},
-        {"city": "Parnaíba", "date": "14/08"},
-        {"city": "Divinópolis", "date": "01/06"},
-        {"city": "Dom Cavati", "date": "01/03"},
-        {"city": "Ataléia", "date": "30/12"},
-        {"city": "Teófilo Otoni", "date": "07/09"},
-        {"city": "Várzea da Palma", "date": "12/12"},
-        {"city": "Coronel Fabriciano", "date": "20/01"},
-        {"city": "Ibirité", "date": "01/03"},
-        {"city": "São Francisco do Glória", "date": "12/12"}
-    ]
-    for c in cities:
-        events.append({"date": c['date'], "type": "Cidade", "city": c['city']})
-
-    # 4. Aniversário da Loja
-    events.append({"date": "13/05", "type": "Loja", "name": "ARLS Magos do Oriente Nº 149"})
-    
-    return events
-
-MASTER_EVENTS = get_master_events()
+# --- LISTA MESTRE (APENAS EVENTOS FIXOS) ---
+# Removemos aniversários de irmãos daqui para gerar dinamicamente
+MASTER_EVENTS = [
+    # Cidades
+    {"date": "12/12", "type": "Cidade", "city": "Belo Horizonte"},
+    {"date": "29/04", "type": "Cidade", "city": "Ipatinga"},
+    {"date": "05/11", "type": "Cidade", "city": "Abaeté"},
+    {"date": "12/12", "type": "Cidade", "city": "Braúnas"},
+    {"date": "14/08", "type": "Cidade", "city": "Parnaíba"},
+    {"date": "01/06", "type": "Cidade", "city": "Divinópolis"},
+    {"date": "01/03", "type": "Cidade", "city": "Dom Cavati"},
+    {"date": "30/12", "type": "Cidade", "city": "Ataléia"},
+    {"date": "07/09", "type": "Cidade", "city": "Teófilo Otoni"},
+    {"date": "12/12", "type": "Cidade", "city": "Várzea da Palma"},
+    {"date": "20/01", "type": "Cidade", "city": "Coronel Fabriciano"},
+    {"date": "01/03", "type": "Cidade", "city": "Ibirité"},
+    {"date": "12/12", "type": "Cidade", "city": "São Francisco do Glória"},
+    # Loja
+    {"date": "13/05", "type": "Loja", "name": "ARLS Magos do Oriente Nº 149"},
+]
 
 PROFESSION_DATES = {
     "Contador": "22/09", "Gerente de Projetos": "06/11", "Analista de TI": "19/10",
@@ -332,63 +235,71 @@ PROFESSION_DATES = {
     "Empresário": "05/10", "Vendedor": "01/10", "Oficial Judiciário": "25/03"
 }
 
-# --- FUNÇÕES ---
+# --- FUNÇÕES AUXILIARES ---
+
+def format_list(names):
+    if not names: return ""
+    if len(names) == 1: return names[0]
+    return ", ".join(names[:-1]) + " e " + names[-1]
 
 def generate_templates(evt):
-    name = evt.get('name', '')
+    # Nomes agora é uma lista se tiver mais de um
+    names = evt.get('names', [evt.get('name')]) if evt.get('names') else [evt.get('name')]
+    names_str = format_list(names)
+    
     city = evt.get('city', '')
     job = evt.get('job', '')
+    
+    # Para família
     related = f" (Família Ir. {evt.get('relatedTo')})" if evt.get('relatedTo') else ""
     
+    # Tratamento especial para cidades (listar irmãos)
+    brothers_from_city = evt.get('brothers_from_city', [])
+    city_suffix = ""
+    if brothers_from_city:
+        city_suffix = f" Abraço fraterno aos irmãos naturais desta terra: {format_list(brothers_from_city)}."
+
     templates = []
     
     if evt['type'] == 'Aniversário':
         templates = [
-            f"Parabéns, Ir. {name}! Que o Grande Arquiteto do Universo ilumine seus caminhos com muita saúde, paz e sabedoria. Feliz aniversário!",
-            f"Hoje celebramos a vida do nosso Ir. {name}. Desejamos muita luz, prosperidade e um novo ciclo repleto de realizações. TFA!",
-            f"Grande abraço e feliz aniversário, Ir. {name}! Que a alegria deste dia se estenda por todo o ano. Muita paz e fraternidade.",
-            f"Nossas homenagens ao Ir. {name} nesta data querida. Que a vida continue lhe sorrindo com amor, saúde e sucesso.",
-            f"Feliz aniversário, meu Irmão {name}! Que tenhas um dia fantástico cercado de carinho, bençãos e união."
+            f"Parabéns, Ir(s). {names_str}! Que o Grande Arquiteto do Universo ilumine os caminhos com muita saúde, paz e sabedoria. Feliz aniversário!",
+            f"Hoje celebramos a vida do(s) nosso(s) Ir(s). {names_str}. Desejamos muita luz, prosperidade e um novo ciclo repleto de realizações. TFA!",
+            f"Grande abraço e feliz aniversário, Ir(s). {names_str}! Que a alegria deste dia se estenda por todo o ano. Muita paz e fraternidade.",
+            f"Nossas homenagens ao(s) Ir(s). {names_str} nesta data querida. Que a vida continue sorrindo com amor, saúde e sucesso.",
+            f"Feliz aniversário, meu(s) Irmão(s) {names_str}! Que tenha(m) um dia fantástico cercado de carinho, bençãos e união."
         ]
     elif evt['type'] == 'Família':
         templates = [
-            f"Parabéns a {name}{related} pelo aniversário! A Loja Magos do Oriente deseja muita saúde e alegrias junto à família.",
-            f"Hoje é dia de festa para {name}! Que o GADU abençoe este novo ano de vida com muitas felicidades e harmonia no lar.",
-            f"Felicitações a {name} nesta data especial. Que seja um dia repleto de amor e celebração em família.",
-            f"Enviamos nosso carinho e votos de feliz aniversário para {name}. Tudo de bom e muitas realizações!",
-            f"Celebramos hoje o aniversário de {name}. Muita luz, paz e proteção divina neste novo ciclo!"
+            f"Parabéns a {names_str}{related} pelo aniversário! A Loja Magos do Oriente deseja muita saúde e alegrias junto à família.",
+            f"Hoje é dia de festa para {names_str}! Que o GADU abençoe este novo ano de vida com muitas felicidades e harmonia no lar.",
+            f"Felicitações a {names_str} nesta data especial. Que seja um dia repleto de amor e celebração em família."
         ]
     elif evt['type'] == 'Casamento':
         templates = [
-            f"Parabéns ao Ir. {name} e esposa pelo aniversário de casamento! Que a união continue sendo fortalecida pelo amor e cumplicidade.",
-            f"Feliz aniversário de casamento, Ir. {name}! Que o GADU continue abençoando essa bela união e a família constituída.",
-            f"Celebrando o amor! Parabéns, Ir. {name}, pelas Bodas. Que a felicidade do casal seja eterna e inspiradora para todos nós.",
-            f"Hoje comemoramos a união do Ir. {name}. Que a harmonia e o respeito reinem sempre em seu lar. Parabéns ao casal!",
-            f"Votos de felicidades infinitas ao Ir. {name} e esposa. Que o laço que os une se torne cada dia mais forte e fraterno."
+            f"Parabéns ao(s) Ir(s). {names_str} pelo aniversário de casamento! Que a união continue sendo fortalecida pelo amor e cumplicidade.",
+            f"Feliz aniversário de casamento, Ir(s). {names_str}! Que o GADU continue abençoando essa bela união e a família constituída.",
+            f"Celebrando o amor! Parabéns, Ir(s). {names_str}, pelas Bodas. Que a felicidade do casal seja eterna e inspiradora para todos nós."
         ]
     elif evt['type'] == 'Iniciação':
         templates = [
-            f"Parabéns, Ir. {name}, pelo seu aniversário de Iniciação! Que a Luz recebida continue guiando seus passos na senda da virtude.",
-            f"Hoje celebramos o nascimento maçônico do Ir. {name}. Que continue lapidando sua Pedra Bruta com vigor e sabedoria. TFA!",
-            f"Feliz aniversário de Iniciação, Ir. {name}! Uma data para recordar o compromisso assumido e renovar os votos de fraternidade.",
-            f"Nesta data especial, saudamos o Ir. {name} pelos anos de dedicação à nossa Ordem. Um verdadeiro exemplo de Obreiro!",
-            f"Mais um ano de Luz na vida do Ir. {name}. Parabéns pela perseverança e pelo trabalho constante em prol da nossa Instituição."
+            f"Parabéns, Ir(s). {names_str}, pelo aniversário de Iniciação! Que a Luz recebida continue guiando os passos na senda da virtude.",
+            f"Hoje celebramos o nascimento maçônico do(s) Ir(s). {names_str}. Que continuem lapidando a Pedra Bruta com vigor e sabedoria. TFA!",
+            f"Feliz aniversário de Iniciação, Ir(s). {names_str}! Uma data para recordar o compromisso assumido e renovar os votos de fraternidade."
         ]
     elif evt['type'] == 'Profissão':
         templates = [
-            f"Homenagem ao Ir. {name} pelo Dia do {job}! Obrigado por construir uma sociedade melhor com seu trabalho digno.",
-            f"Parabéns aos profissionais de {job}, em especial ao nosso Ir. {name}. Sucesso e muitas realizações na carreira!",
-            f"Dia do {job}! Nossos cumprimentos ao Ir. {name} pela dedicação, ética e excelência profissional.",
-            f"Uma homenagem especial ao Ir. {name} nesta data dedicada ao {job}. Reconhecimento merecido pelo seu esforço!",
-            f"Celebramos hoje o Dia do {job}. Parabéns, Ir. {name}, por exercer sua profissão com maestria e responsabilidade."
+            f"Homenagem ao(s) Ir(s). {names_str} pelo Dia do {job}! Obrigado por construir uma sociedade melhor com trabalho digno.",
+            f"Parabéns aos profissionais de {job}, em especial ao(s) nosso(s) Ir(s). {names_str}. Sucesso e muitas realizações na carreira!",
+            f"Dia do {job}! Nossos cumprimentos ao(s) Ir(s). {names_str} pela dedicação, ética e excelência profissional.",
+            f"Celebramos hoje o Dia do {job}. Parabéns, Ir(s). {names_str}, por exercer(em) a profissão com maestria e responsabilidade."
         ]
     elif evt['type'] == 'Cidade':
         templates = [
-            f"Parabéns à cidade de {city} pelo seu aniversário! Que continue crescendo e acolhendo a todos com hospitalidade.",
-            f"Hoje {city} está em festa! Nossas homenagens a esta terra querida e aos irmãos que nela residem e trabalham.",
-            f"Aniversário de {city}! Celebramos a história e o futuro desta cidade que é lar de tantos de nós.",
-            f"Parabéns, {city}! Que o progresso, a paz e a harmonia sejam constantes nesta cidade maravilhosa.",
-            f"Dia de festa em {city}! Homenagem da ARLS Magos do Oriente Nº 149 a esta comunidade."
+            f"Parabéns à cidade de {city} pelo seu aniversário! Que continue crescendo e acolhendo a todos com hospitalidade.{city_suffix}",
+            f"Hoje {city} está em festa! Nossas homenagens a esta terra querida.{city_suffix}",
+            f"Aniversário de {city}! Celebramos a história e o futuro desta cidade que é lar de tantos de nós.{city_suffix}",
+            f"Parabéns, {city}! Que o progresso, a paz e a harmonia sejam constantes nesta cidade maravilhosa.{city_suffix}"
         ]
     elif evt['type'] == 'Loja':
         templates = [f"Parabéns ARLS Magos do Oriente Nº 149! Que a luz continue brilhando.", f"Dia de festa na Loja! Parabéns a todos os Obreiros.", f"Viva a Magos do Oriente! Anos de tradição e fraternidade."]
@@ -397,205 +308,156 @@ def generate_templates(evt):
         
     return templates
 
-# --- ESTADO DA SESSÃO (LOGIN) ---
-
-if 'logged_in' not in st.session_state:
-    st.session_state['logged_in'] = False
-
 # --- INTERFACE ---
 
-if not st.session_state['logged_in']:
-    # TELA DE LOGIN
+if not st.session_state.get('logged_in', False):
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
         st.markdown("<br><br>", unsafe_allow_html=True)
-        try:
-            st.image('logo-magos.png', width=300)
-        except:
-            st.markdown("<div style='text-align:center;'>Logo</div>", unsafe_allow_html=True)
-            
+        try: st.image('logo-magos.png', width=300)
+        except: st.markdown("<div style='text-align:center;'>Logo</div>", unsafe_allow_html=True)
         st.markdown("<h2 style='text-align: center;'>ACESSO RESTRITO</h2>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #888;'>Magos do Oriente N° 149</p>", unsafe_allow_html=True)
-        
-        password = st.text_input("Senha", type="password")
-        
+        pwd = st.text_input("Senha", type="password")
         if st.button("ENTRAR", use_container_width=True):
-            if password == "149":
+            if pwd == "149":
                 st.session_state['logged_in'] = True
                 st.rerun()
-            else:
-                st.error("Senha incorreta.")
+            else: st.error("Senha incorreta.")
 else:
-    # TELA PRINCIPAL
-    
-    # Cabeçalho com Logo Maior (Aumentado para 350)
     col_h1, col_h2 = st.columns([1, 2])
     with col_h1:
-        try:
-            st.image('logo-magos.png', width=350)
-        except:
-            pass
+        try: st.image('logo-magos.png', width=350)
+        except: pass
     with col_h2:
          st.markdown("<h1 style='margin-top: 60px; font-size: 2.5em;'>MAGOS DO ORIENTE N° 149</h1>", unsafe_allow_html=True)
 
-    # Data de Hoje (Formatada em PT-BR manualmente)
     today = datetime.now()
-    meses_pt_dict = {1:'Janeiro', 2:'Fevereiro', 3:'Março', 4:'Abril', 5:'Maio', 6:'Junho', 7:'Julho', 8:'Agosto', 9:'Setembro', 10:'Outubro', 11:'Novembro', 12:'Dezembro'}
-    today_str = f"Hoje: {today.day} de {meses_pt_dict[today.month]} de {today.year}"
-    st.markdown(f"<div style='text-align: right; color: #888; margin-bottom: 20px;'>{today_str}</div>", unsafe_allow_html=True)
+    meses_pt = {1:'Janeiro', 2:'Fevereiro', 3:'Março', 4:'Abril', 5:'Maio', 6:'Junho', 7:'Julho', 8:'Agosto', 9:'Setembro', 10:'Outubro', 11:'Novembro', 12:'Dezembro'}
+    st.markdown(f"<div style='text-align: right; color: #888; margin-bottom: 20px;'>Hoje: {today.day} de {meses_pt[today.month]} de {today.year}</div>", unsafe_allow_html=True)
     
     st.divider()
-
-    # --- SEÇÃO SUPERIOR: VERIFICADOR DE EVENTOS ---
-    
     st.markdown("<h3 style='text-align: center; margin-bottom: 20px;'>VERIFICAR EVENTOS DA SEMANA (Segunda a Domingo)</h3>", unsafe_allow_html=True)
     
-    # SELETOR DE DATA PERSONALIZADO (Sem Ano - Apenas Dia e Mês) - Layout Ajustado (2-1-2-2)
-    c_container = st.container()
-    with c_container:
-        # Usando colunas para centralizar e deixar mais "apertado" visualmente
-        # Colunas: [Spacer Left, Dia, Mês, Spacer Right]
-        # Dia ~1 parte, Mês ~2 partes. Espaços laterais maiores para centralizar.
-        col_spacer_l, col_d1, col_d2, col_spacer_r = st.columns([2, 1, 2, 2])
+    with st.container():
+        col_spacer_l, col_d1, col_d2, col_spacer_r = st.columns([4, 1, 2, 4])
+        with col_d1: sel_dia = st.selectbox("Dia", list(range(1, 32)), index=today.day-1)
+        with col_d2: 
+            meses_list = list(meses_pt.values())
+            sel_mes_nome = st.selectbox("Mês", meses_list, index=today.month-1)
         
-        # Valores Padrão
-        default_day = today.day
-        default_month_idx = today.month - 1
-        # O ano será sempre o atual internamente
-        default_year = today.year
-        
-        with col_d1:
-            sel_dia = st.selectbox("Dia", list(range(1, 32)), index=default_day-1)
-        with col_d2:
-            meses_lista = list(meses_pt_dict.values())
-            sel_mes_nome = st.selectbox("Mês", meses_lista, index=default_month_idx)
-
-        # Converter seleção para objeto date
-        sel_mes_num = meses_lista.index(sel_mes_nome) + 1
-        
-        valid_date = True
-        try:
-            # Tenta criar data com ano atual.
-            check_date = datetime(default_year, sel_mes_num, sel_dia).date()
-        except ValueError:
-            valid_date = False
-            st.error(f"Data inválida para o ano atual ({sel_dia}/{sel_mes_num}). Verifique a seleção.")
+        sel_mes_num = meses_list.index(sel_mes_nome) + 1
+        try: check_date = datetime(today.year, sel_mes_num, sel_dia).date()
+        except ValueError: st.error("Data inválida."); check_date = None
 
     st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Botão Centralizado
     _, col_btn, _ = st.columns([1, 1, 1])
-    with col_btn:
-        btn_verificar = st.button("VERIFICAR AGORA", use_container_width=True)
+    with col_btn: btn_verificar = st.button("VERIFICAR AGORA", use_container_width=True)
         
-    if btn_verificar and valid_date:
-        # Calcular início (Segunda) e fim (Domingo) da semana selecionada
+    if btn_verificar and check_date:
         start_of_week = check_date - timedelta(days=check_date.weekday())
         week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
         
-        events = []
+        found_events = []
         
-        # Loop para cada dia da semana
         for current_date in week_dates:
-            day = current_date.strftime("%d")
-            month = current_date.strftime("%m")
-            date_str = f"{day}/{month}"
+            day_str = f"{current_date.day:02d}/{current_date.month:02d}"
             
-            # 1. Lista Mestre
+            # 1. AGRUPAR IRMÃOS POR TIPO (Aniversário, Casamento, Iniciação)
+            daily_births = [b['name'] for b in BROTHERS if b['birth'] == day_str]
+            if daily_births: found_events.append({'date': day_str, 'type': 'Aniversário', 'names': daily_births, 'full_date': current_date})
+            
+            daily_weds = [b['name'] for b in BROTHERS if b['wedding'] == day_str]
+            if daily_weds: found_events.append({'date': day_str, 'type': 'Casamento', 'names': daily_weds, 'full_date': current_date})
+            
+            daily_inits = [b['name'] for b in BROTHERS if b['init'] == day_str]
+            if daily_inits: found_events.append({'date': day_str, 'type': 'Iniciação', 'names': daily_inits, 'full_date': current_date})
+
+            # 2. FAMÍLIA (Mantém individual por causa da relação específica)
+            for bro in BROTHERS:
+                fam = bro['family']
+                if fam:
+                    if fam.get('wife') and fam['wife'].endswith(f"({day_str})"):
+                        found_events.append({'date': day_str, 'type': 'Família', 'name': fam['wife'].split('(')[0].strip(), 'relatedTo': bro['name'], 'full_date': current_date})
+                    if fam.get('children'):
+                        for child in fam['children']:
+                            if child.endswith(f"({day_str})"):
+                                found_events.append({'date': day_str, 'type': 'Família', 'name': child.split('(')[0].strip(), 'relatedTo': bro['name'], 'full_date': current_date})
+                    if fam.get('parents'):
+                        for parent in fam['parents']:
+                            if parent.endswith(f"({day_str})"):
+                                found_events.append({'date': day_str, 'type': 'Família', 'name': parent.split('(')[0].strip(), 'relatedTo': bro['name'], 'full_date': current_date})
+
+            # 3. PROFISSÃO (Agrupado)
+            professions_today = set()
+            for bro in BROTHERS:
+                if bro['job'] and PROFESSION_DATES.get(bro['job']) == day_str:
+                    professions_today.add(bro['job'])
+            
+            for prof in professions_today:
+                bros_with_job = [b['name'] for b in BROTHERS if b['job'] == prof]
+                found_events.append({'date': day_str, 'type': 'Profissão', 'job': prof, 'names': bros_with_job, 'full_date': current_date})
+            
+            # Caso Especial Matheus
+            if day_str == "25/03":
+                found_events.append({'date': day_str, 'type': 'Profissão', 'job': 'Oficial Judiciário', 'names': ["Matheus Eustáquio Gomes de Faria"], 'full_date': current_date})
+
+            # 4. CIDADE (Com lista de naturais)
             for evt in MASTER_EVENTS:
-                if evt['date'] == date_str:
+                if evt['type'] == 'Cidade' and evt['date'] == day_str:
+                    city_name = evt['city']
+                    # Achar irmãos dessa cidade
+                    bros_from_city = [b['name'] for b in BROTHERS if b.get('city') == city_name]
                     evt_copy = evt.copy()
                     evt_copy['full_date'] = current_date
-                    events.append(evt_copy)
-            
-            # 2. Profissões (Dinâmico)
-            for bro in BROTHERS:
-                if bro['job'] and PROFESSION_DATES.get(bro['job']) == date_str:
-                    events.append({
-                        'type': 'Profissão', 
-                        'name': bro['name'], 
-                        'job': bro['job'], 
-                        'date': date_str,
-                        'full_date': current_date
-                    })
-            
-            # 3. Oficial de Justiça (Caso especial Matheus)
-            if date_str == "25/03":
-                    events.append({ 
-                        'type': 'Profissão', 
-                        'name': "Matheus Eustáquio Gomes de Faria", 
-                        'job': "Oficial Judiciário", 
-                        'date': date_str,
-                        'full_date': current_date
-                    })
+                    if bros_from_city:
+                        evt_copy['brothers_from_city'] = bros_from_city
+                    found_events.append(evt_copy)
+                elif evt['date'] == day_str: # Outros eventos mestre (Loja)
+                    evt_copy = evt.copy()
+                    evt_copy['full_date'] = current_date
+                    found_events.append(evt_copy)
 
         st.markdown("<hr style='border-color: #333;'>", unsafe_allow_html=True)
         
-        if not events:
-            st.info(f"Nenhum evento encontrado para a semana de {start_of_week.strftime('%d/%m')} a {(start_of_week + timedelta(days=6)).strftime('%d/%m')}.")
+        if not found_events:
+            st.info("Nenhum evento encontrado para a semana.")
         else:
-            st.success(f"{len(events)} evento(s) encontrado(s) para a semana!")
+            st.success(f"{len(found_events)} evento(s) encontrado(s)!")
+            found_events.sort(key=lambda x: x['full_date'])
             
-            # Ordenar eventos por data dentro da semana
-            events.sort(key=lambda x: x['full_date'])
-            
-            # IMPORTANTE: Usar 'enumerate' para garantir chaves únicas
-            for idx, evt in enumerate(events):
+            for idx, evt in enumerate(found_events):
                 msgs = generate_templates(evt)
+                wkday = evt['full_date'].strftime("%A")
+                pt_wkday = {'Monday':'Segunda', 'Tuesday':'Terça', 'Wednesday':'Quarta', 'Thursday':'Quinta', 'Friday':'Sexta', 'Saturday':'Sábado', 'Sunday':'Domingo'}.get(wkday, wkday)
                 
-                # Mostrar dia da semana EM PORTUGUÊS EXTENSO
-                weekday_num = evt['full_date'].weekday()
-                days_pt = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
-                pt_weekday = days_pt[weekday_num]
-                
+                # Título do Card
+                display_title = evt.get('city') or evt.get('job') or format_list(evt.get('names', [evt.get('name')]))
+                if evt['type'] == 'Loja': display_title = evt['name']
+
                 st.markdown(f"""
                 <div class='result-card'>
-                    <div class='result-header'>
-                        <span>{evt['type']}</span>
-                        <span>{evt['date']} - {pt_weekday}</span>
-                    </div>
-                    <h3 style='margin-top: 5px; color: white; font-size: 1.3em;'>{evt.get('name') or evt.get('city')}</h3>
-                    {f"<div style='color: #aaa; font-size: 0.9em; margin-top:5px;'>Relacionado a: {evt.get('relatedTo')}</div>" if evt.get('relatedTo') else ""}
-                </div>
-                """, unsafe_allow_html=True)
+                    <div class='result-header'><span>{evt['type']}</span><span>{evt['date']} - {pt_wkday}</span></div>
+                    <h3 style='margin-top:5px;color:white;font-size:1.3em;'>{display_title}</h3>
+                    {f"<div style='color:#aaa;font-size:0.9em;margin-top:5px;'>Relacionado a: {evt.get('relatedTo')}</div>" if evt.get('relatedTo') else ""}
+                </div>""", unsafe_allow_html=True)
                 
-                # SUBSTITUIÇÃO DA CAIXA DE TEXTO E CORREÇÃO DO ERRO DE DUPLICAÇÃO
                 st.code(msgs[0], language="markdown")
-                
-                with st.expander("Ver mais opções de mensagens"):
-                    for i, msg in enumerate(msgs[1:]):
-                        st.code(msg, language="markdown")
+                with st.expander("Ver mais opções"):
+                    for msg in msgs[1:]: st.code(msg, language="markdown")
 
     st.divider()
-    
-    # --- QUADRO DE OBREIROS ---
     st.markdown("#### QUADRO DE OBREIROS")
-    
-    filtered_brothers = sorted(BROTHERS, key=lambda x: x['name'])
-    
     with st.container():
         cols = st.columns(3)
-        for i, bro in enumerate(filtered_brothers):
+        for i, bro in enumerate(sorted(BROTHERS, key=lambda x: x['name'])):
             with cols[i % 3]:
-                fam = bro['family']
                 fam_html = ""
-                if fam:
-                    if fam.get('wife'):
-                        fam_html += f"<div>❤️ Esposa: {fam['wife']}</div>"
-                    if fam.get('children'):
-                        children_str = ', '.join(fam['children'])
-                        fam_html += f"<div>👶 Filhos: {children_str}</div>"
-                    if fam.get('parents'):
-                        parents_str = ', '.join(fam['parents'])
-                        fam_html += f"<div>👴 Pais: {parents_str}</div>"
-                
-                html = f"""<div class='brother-card'>
-<div class='card-title'>{bro['name']}</div>
-<div class='card-info'>🎂 Nasc: {bro['birth'] or '-'}</div>
-<div class='card-info'>💍 Casam: {bro['wedding'] or '-'}</div>
-<div class='card-info'>🎓 Inic: {bro['init'] or '-'}</div>
-<div class='card-info'>💼 Prof: {bro['job'] or '-'}</div>
-<div class='card-info'>📍 Cid: {bro['city'] or '-'}</div>
-<div class='card-family'>{fam_html}</div>
-</div>"""
-                st.markdown(html, unsafe_allow_html=True)
+                if bro['family']:
+                    if bro['family'].get('wife'): fam_html += f"<div>❤️ Esposa: {bro['family']['wife']}</div>"
+                    if bro['family'].get('children'): fam_html += f"<div>👶 Filhos: {', '.join(bro['family']['children'])}</div>"
+                    if bro['family'].get('parents'): fam_html += f"<div>👴 Pais: {', '.join(bro['family']['parents'])}</div>"
+                st.markdown(f"""<div class='brother-card'><div class='card-title'>{bro['name']}</div>
+                <div class='card-info'>🎂 Nasc: {bro['birth'] or '-'}</div><div class='card-info'>💍 Casam: {bro['wedding'] or '-'}</div>
+                <div class='card-info'>🎓 Inic: {bro['init'] or '-'}</div><div class='card-info'>💼 Prof: {bro['job'] or '-'}</div>
+                <div class='card-info'>📍 Cid: {bro['city'] or '-'}</div><div class='card-family'>{fam_html}</div></div>""", unsafe_allow_html=True)
