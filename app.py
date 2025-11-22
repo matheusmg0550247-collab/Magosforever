@@ -34,6 +34,12 @@ st.markdown("""
         color: white;
         border: 1px solid #444;
     }
+    /* Centralizar texto dentro do selectbox se possível */
+    .stSelectbox > label {
+        text-align: center;
+        width: 100%;
+    }
+    
     .stTextInput > div > div > input {
         background-color: #1a1a1a;
         color: white;
@@ -113,8 +119,7 @@ st.markdown("""
         margin-bottom: 5px;
     }
     
-    /* Ajuste CRÍTICO para o st.code (Caixa de Mensagem) */
-    /* Força quebra de linha e remove barra horizontal */
+    /* Ajuste para o st.code (Caixa de Mensagem) */
     code {
         white-space: pre-wrap !important;
         font-family: 'Courier New', Courier, monospace !important;
@@ -445,10 +450,13 @@ else:
     
     st.markdown("<h3 style='text-align: center; margin-bottom: 20px;'>VERIFICAR EVENTOS DA SEMANA (Segunda a Domingo)</h3>", unsafe_allow_html=True)
     
-    # SELETOR DE DATA PERSONALIZADO (Sem Ano - Apenas Dia e Mês)
+    # SELETOR DE DATA PERSONALIZADO (Sem Ano - Apenas Dia e Mês) - Layout Ajustado (2-1-2-2)
     c_container = st.container()
     with c_container:
-        col_d1, col_d2 = st.columns([1, 2])
+        # Usando colunas para centralizar e deixar mais "apertado" visualmente
+        # Colunas: [Spacer Left, Dia, Mês, Spacer Right]
+        # Dia ~1 parte, Mês ~2 partes. Espaços laterais maiores para centralizar.
+        col_spacer_l, col_d1, col_d2, col_spacer_r = st.columns([2, 1, 2, 2])
         
         # Valores Padrão
         default_day = today.day
@@ -467,7 +475,7 @@ else:
         
         valid_date = True
         try:
-            # Tenta criar data com ano atual. Se for 29/02 e não for bissexto, vai falhar.
+            # Tenta criar data com ano atual.
             check_date = datetime(default_year, sel_mes_num, sel_dia).date()
         except ValueError:
             valid_date = False
