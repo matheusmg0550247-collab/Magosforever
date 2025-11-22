@@ -20,7 +20,7 @@ except:
     except:
         pass
 
-# --- ESTILOS CSS (Preto e Branco) ---
+# --- ESTILOS CSS (Preto e Branco + Ajustes de Texto) ---
 st.markdown("""
 <style>
     /* Fundo Geral */
@@ -36,18 +36,6 @@ st.markdown("""
         border: 1px solid #444;
         text-align: center;
         font-size: 1.2rem;
-    }
-    .stTextInput > div > div > input {
-        background-color: #1a1a1a;
-        color: white;
-        border: 1px solid #444;
-        text-align: center;
-    }
-    .stTextArea > div > div > textarea {
-        background-color: #111;
-        color: #eee;
-        border: 1px solid #444;
-        font-family: monospace;
     }
     
     /* Botões */
@@ -110,7 +98,7 @@ st.markdown("""
         border-left: 4px solid white;
         padding: 20px;
         border-radius: 4px;
-        margin-bottom: 15px;
+        margin-bottom: 5px;
     }
     .result-header {
         display: flex;
@@ -122,13 +110,21 @@ st.markdown("""
         margin-bottom: 5px;
     }
     
+    /* Ajuste para o st.code (Caixa de Mensagem) */
+    /* Isso força a quebra de linha e remove a barra de rolagem horizontal */
+    code {
+        white-space: pre-wrap !important;
+        font-family: 'Courier New', Courier, monospace !important;
+        font-size: 1rem !important; /* Aumenta o texto */
+    }
+    
     /* Títulos */
     h1, h2, h3 {
         color: white !important;
         font-family: 'Segoe UI', sans-serif;
     }
 
-    /* Esconder elementos padrão do Streamlit */
+    /* Esconder elementos padrão */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
@@ -260,26 +256,24 @@ BROTHERS = [
     }
 ]
 
-# --- GERADOR DINÂMICO DE EVENTOS (Baseado na lista BROTHERS) ---
+# --- GERADOR DINÂMICO DE EVENTOS ---
 def get_master_events():
     events = []
     
-    # 1. Eventos dos Irmãos (Aniversário, Casamento, Iniciação)
+    # 1. Eventos dos Irmãos
     for bro in BROTHERS:
         if bro['birth']: events.append({"date": bro['birth'], "type": "Birthday", "name": bro['name']})
         if bro['wedding']: events.append({"date": bro['wedding'], "type": "Wedding", "name": bro['name']})
         if bro['init']: events.append({"date": bro['init'], "type": "Initiation", "name": bro['name']})
         
-        # 2. Eventos da Família (Extraídos das strings formatadas "Nome (Data)")
+        # 2. Eventos da Família
         fam = bro['family']
         if fam:
-            # Verifica Esposa
             if fam.get('wife') and '(' in str(fam['wife']):
                 name_part = fam['wife'].split('(')[0].strip()
                 date_part = fam['wife'].split('(')[1].replace(')', '').strip()
                 events.append({"date": date_part, "type": "Family", "name": name_part, "relatedTo": bro['name']})
             
-            # Verifica Filhos
             if fam.get('children'):
                 for child in fam['children']:
                     if '(' in child:
@@ -287,7 +281,6 @@ def get_master_events():
                         date_part = child.split('(')[1].replace(')', '').strip()
                         events.append({"date": date_part, "type": "Family", "name": name_part, "relatedTo": bro['name']})
                         
-            # Verifica Pais
             if fam.get('parents'):
                 for parent in fam['parents']:
                     if '(' in parent:
@@ -295,7 +288,7 @@ def get_master_events():
                         date_part = parent.split('(')[1].replace(')', '').strip()
                         events.append({"date": date_part, "type": "Family", "name": name_part, "relatedTo": bro['name']})
 
-    # 3. Eventos de Cidade (Fixos)
+    # 3. Eventos de Cidade
     cities = [
         {"city": "Belo Horizonte", "date": "12/12"},
         {"city": "Ipatinga", "date": "29/04"},
@@ -504,12 +497,12 @@ else:
                 # Ordenar eventos por data dentro da semana
                 events.sort(key=lambda x: x['full_date'])
                 
-                for evt in events:
+                # IMPORTANTE: Usar 'enumerate' para garantir chaves únicas e evitar o erro StreamlitDuplicateElementKey
+                for idx, evt in enumerate(events):
                     msgs = generate_templates(evt)
                     
                     # Mostrar dia da semana
                     weekday_name = evt['full_date'].strftime("%A")
-                    # Tradução simples dos dias
                     days_map = {'Monday':'Segunda', 'Tuesday':'Terça', 'Wednesday':'Quarta', 'Thursday':'Quinta', 'Friday':'Sexta', 'Saturday':'Sábado', 'Sunday':'Domingo'}
                     pt_weekday = days_map.get(weekday_name, weekday_name)
                     
@@ -524,12 +517,16 @@ else:
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    # Usando st.text_area para melhor visualização e cópia
-                    st.text_area("Mensagem Principal", value=msgs[0], height=100, key=f"main_{evt.get('name')}_{evt['date']}_{evt['type']}")
+                    # SUBSTITUIÇÃO DA CAIXA DE TEXTO E CORREÇÃO DO ERRO DE DUPLICAÇÃO
+                    # Usamos st.code pois é o único componente com botão de copiar nativo.
+                    # O CSS injetado acima força a quebra de linha, fazendo ele parecer uma caixa de texto alta.
+                    # Chaves (keys) agora usam 'idx' do loop principal para garantir unicidade.
+                    
+                    st.code(msgs[0], language="markdown")
                     
                     with st.expander("Ver mais opções de mensagens"):
                         for i, msg in enumerate(msgs[1:]):
-                            st.text_area(f"Opção {i+2}", value=msg, height=100, key=f"opt_{i}_{evt.get('name')}_{evt['date']}_{evt['type']}")
+                            st.code(msg, language="markdown")
 
     st.divider()
     
