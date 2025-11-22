@@ -20,7 +20,7 @@ except:
     except:
         pass
 
-# --- ESTILOS CSS (Preto e Branco + Ajustes de Texto) ---
+# --- ESTILOS CSS (Preto e Branco + Ajustes) ---
 st.markdown("""
 <style>
     /* Fundo Geral */
@@ -29,13 +29,17 @@ st.markdown("""
         color: #e0e0e0;
     }
     
-    /* Inputs */
-    .stDateInput > div > div > input {
-        color: white;
+    /* Inputs e Selectbox */
+    .stSelectbox > div > div {
         background-color: #1a1a1a;
+        color: white;
+        border: 1px solid #444;
+    }
+    .stTextInput > div > div > input {
+        background-color: #1a1a1a;
+        color: white;
         border: 1px solid #444;
         text-align: center;
-        font-size: 1.2rem;
     }
     
     /* Botões */
@@ -111,11 +115,10 @@ st.markdown("""
     }
     
     /* Ajuste para o st.code (Caixa de Mensagem) */
-    /* Isso força a quebra de linha e remove a barra de rolagem horizontal */
     code {
         white-space: pre-wrap !important;
         font-family: 'Courier New', Courier, monospace !important;
-        font-size: 1rem !important; /* Aumenta o texto */
+        font-size: 1rem !important;
     }
     
     /* Títulos */
@@ -124,7 +127,7 @@ st.markdown("""
         font-family: 'Segoe UI', sans-serif;
     }
 
-    /* Esconder elementos padrão */
+    /* Ocultar elementos padrão */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
@@ -420,117 +423,149 @@ if not st.session_state['logged_in']:
 else:
     # TELA PRINCIPAL
     
-    # Cabeçalho
-    col_h1, col_h2 = st.columns([3, 1])
+    # Cabeçalho com Logo Maior
+    col_h1, col_h2 = st.columns([1, 2])
     with col_h1:
-        c1, c2 = st.columns([0.5, 3])
-        with c1:
-            try:
-                st.image('logo-magos.png', width=100)
-            except:
-                pass
-        with c2:
-             st.markdown("<h3 style='margin-top:35px;'>MAGOS DO ORIENTE N° 149</h3>", unsafe_allow_html=True)
-
+        try:
+            # Aumentado de 100 para 250 para ficar "maior assim que entra"
+            st.image('logo-magos.png', width=250)
+        except:
+            pass
     with col_h2:
-        # Data do sistema em português
-        today = datetime.now()
-        # Mapeamento manual para garantir
-        meses = {1:'Janeiro', 2:'Fevereiro', 3:'Março', 4:'Abril', 5:'Maio', 6:'Junho', 7:'Julho', 8:'Agosto', 9:'Setembro', 10:'Outubro', 11:'Novembro', 12:'Dezembro'}
-        today_str = f"{today.day} de {meses[today.month]} de {today.year}"
-        st.markdown(f"<div style='text-align: right; color: #888; padding-top: 40px;'>{today_str}</div>", unsafe_allow_html=True)
+         # Alinhamento vertical do texto para ficar harmonico com o logo maior
+         st.markdown("<h1 style='margin-top: 40px; font-size: 2.5em;'>MAGOS DO ORIENTE N° 149</h1>", unsafe_allow_html=True)
+
+    # Data de Hoje (Formatada em PT-BR manualmente)
+    today = datetime.now()
+    meses_pt_dict = {1:'Janeiro', 2:'Fevereiro', 3:'Março', 4:'Abril', 5:'Maio', 6:'Junho', 7:'Julho', 8:'Agosto', 9:'Setembro', 10:'Outubro', 11:'Novembro', 12:'Dezembro'}
+    today_str = f"Hoje: {today.day} de {meses_pt_dict[today.month]} de {today.year}"
+    st.markdown(f"<div style='text-align: right; color: #888; margin-bottom: 20px;'>{today_str}</div>", unsafe_allow_html=True)
     
     st.divider()
 
     # --- SEÇÃO SUPERIOR: VERIFICADOR DE EVENTOS ---
     
-    st.markdown("<h3 style='text-align: center; margin-bottom: 20px;'>VERIFICAR EVENTOS DA SEMANA (Seg-Dom)</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; margin-bottom: 20px;'>VERIFICAR EVENTOS DA SEMANA (Segunda a Domingo)</h3>", unsafe_allow_html=True)
     
-    col_v1, col_v2, col_v3 = st.columns([1,1,1])
-    with col_v2:
-        check_date = st.date_input("Selecione a Data para Verificar", datetime.now(), format="DD/MM/YYYY")
+    # SELETOR DE DATA PERSONALIZADO (Em Português e Visível)
+    c_container = st.container()
+    with c_container:
+        col_d1, col_d2, col_d3 = st.columns([1, 2, 1])
         
-        if st.button("VERIFICAR AGORA", use_container_width=True):
-            # Calcular início (Segunda) e fim (Domingo) da semana selecionada
-            start_of_week = check_date - timedelta(days=check_date.weekday())
-            week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
-            
-            events = []
-            
-            # Loop para cada dia da semana
-            for current_date in week_dates:
-                day = current_date.strftime("%d")
-                month = current_date.strftime("%m")
-                date_str = f"{day}/{month}"
-                
-                # 1. Lista Mestre
-                for evt in MASTER_EVENTS:
-                    if evt['date'] == date_str:
-                        evt_copy = evt.copy()
-                        evt_copy['full_date'] = current_date
-                        events.append(evt_copy)
-                
-                # 2. Profissões (Dinâmico)
-                for bro in BROTHERS:
-                    if bro['job'] and PROFESSION_DATES.get(bro['job']) == date_str:
-                        events.append({
-                            'type': 'Profissão', 
-                            'name': bro['name'], 
-                            'job': bro['job'], 
-                            'date': date_str,
-                            'full_date': current_date
-                        })
-                
-                # 3. Oficial de Justiça (Caso especial Matheus)
-                if date_str == "25/03":
-                     events.append({ 
-                         'type': 'Profissão', 
-                         'name': "Matheus Eustáquio Gomes de Faria", 
-                         'job': "Oficial Judiciário", 
-                         'date': date_str,
-                         'full_date': current_date
-                     })
+        # Valores Padrão
+        default_day = today.day
+        default_month_idx = today.month - 1
+        default_year = today.year
+        
+        with col_d1:
+            sel_dia = st.selectbox("Dia", list(range(1, 32)), index=default_day-1)
+        with col_d2:
+            meses_lista = list(meses_pt_dict.values())
+            sel_mes_nome = st.selectbox("Mês", meses_lista, index=default_month_idx)
+        with col_d3:
+            # Anos de 2024 a 2030
+            anos_lista = list(range(2024, 2031))
+            try:
+                ano_idx = anos_lista.index(default_year)
+            except:
+                ano_idx = 0
+            sel_ano = st.selectbox("Ano", anos_lista, index=ano_idx)
 
-            st.markdown("<br>", unsafe_allow_html=True)
+        # Converter seleção para objeto date
+        sel_mes_num = meses_lista.index(sel_mes_nome) + 1
+        
+        valid_date = True
+        try:
+            check_date = datetime(sel_ano, sel_mes_num, sel_dia).date()
+        except ValueError:
+            valid_date = False
+            st.error("Data inválida (ex: 31 de Fevereiro). Verifique a seleção.")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Botão Centralizado
+    _, col_btn, _ = st.columns([1, 1, 1])
+    with col_btn:
+        btn_verificar = st.button("VERIFICAR AGORA", use_container_width=True)
+        
+    if btn_verificar and valid_date:
+        # Calcular início (Segunda) e fim (Domingo) da semana selecionada
+        # weekday(): 0=Segunda, 6=Domingo
+        start_of_week = check_date - timedelta(days=check_date.weekday())
+        week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
+        
+        events = []
+        
+        # Loop para cada dia da semana
+        for current_date in week_dates:
+            day = current_date.strftime("%d")
+            month = current_date.strftime("%m")
+            date_str = f"{day}/{month}"
             
-            if not events:
-                st.info(f"Nenhum evento encontrado para a semana de {start_of_week.strftime('%d/%m')} a {(start_of_week + timedelta(days=6)).strftime('%d/%m')}.")
-            else:
-                st.success(f"{len(events)} evento(s) encontrado(s) para a semana!")
+            # 1. Lista Mestre
+            for evt in MASTER_EVENTS:
+                if evt['date'] == date_str:
+                    evt_copy = evt.copy()
+                    evt_copy['full_date'] = current_date
+                    events.append(evt_copy)
+            
+            # 2. Profissões (Dinâmico)
+            for bro in BROTHERS:
+                if bro['job'] and PROFESSION_DATES.get(bro['job']) == date_str:
+                    events.append({
+                        'type': 'Profissão', 
+                        'name': bro['name'], 
+                        'job': bro['job'], 
+                        'date': date_str,
+                        'full_date': current_date
+                    })
+            
+            # 3. Oficial de Justiça (Caso especial Matheus)
+            if date_str == "25/03":
+                    events.append({ 
+                        'type': 'Profissão', 
+                        'name': "Matheus Eustáquio Gomes de Faria", 
+                        'job': "Oficial Judiciário", 
+                        'date': date_str,
+                        'full_date': current_date
+                    })
+
+        st.markdown("<hr style='border-color: #333;'>", unsafe_allow_html=True)
+        
+        if not events:
+            st.info(f"Nenhum evento encontrado para a semana de {start_of_week.strftime('%d/%m')} a {(start_of_week + timedelta(days=6)).strftime('%d/%m')}.")
+        else:
+            st.success(f"{len(events)} evento(s) encontrado(s) para a semana!")
+            
+            # Ordenar eventos por data dentro da semana
+            events.sort(key=lambda x: x['full_date'])
+            
+            # IMPORTANTE: Usar 'enumerate' para garantir chaves únicas
+            for idx, evt in enumerate(events):
+                msgs = generate_templates(evt)
                 
-                # Ordenar eventos por data dentro da semana
-                events.sort(key=lambda x: x['full_date'])
+                # Mostrar dia da semana EM PORTUGUÊS EXTENSO
+                weekday_num = evt['full_date'].weekday()
+                days_pt = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo']
+                pt_weekday = days_pt[weekday_num]
                 
-                # IMPORTANTE: Usar 'enumerate' para garantir chaves únicas e evitar o erro StreamlitDuplicateElementKey
-                for idx, evt in enumerate(events):
-                    msgs = generate_templates(evt)
-                    
-                    # Mostrar dia da semana
-                    weekday_name = evt['full_date'].strftime("%A")
-                    days_map = {'Monday':'Segunda-feira', 'Tuesday':'Terça-feira', 'Wednesday':'Quarta-feira', 'Thursday':'Quinta-feira', 'Friday':'Sexta-feira', 'Saturday':'Sábado', 'Sunday':'Domingo'}
-                    pt_weekday = days_map.get(weekday_name, weekday_name)
-                    
-                    st.markdown(f"""
-                    <div class='result-card'>
-                        <div class='result-header'>
-                            <span>{evt['type']}</span>
-                            <span>{evt['date']} ({pt_weekday})</span>
-                        </div>
-                        <h3 style='margin-top: 5px; color: white; font-size: 1.3em;'>{evt.get('name') or evt.get('city')}</h3>
-                        {f"<div style='color: #aaa; font-size: 0.9em; margin-top:5px;'>Relacionado a: {evt.get('relatedTo')}</div>" if evt.get('relatedTo') else ""}
+                st.markdown(f"""
+                <div class='result-card'>
+                    <div class='result-header'>
+                        <span>{evt['type']}</span>
+                        <span>{evt['date']} - {pt_weekday}</span>
                     </div>
-                    """, unsafe_allow_html=True)
-                    
-                    # SUBSTITUIÇÃO DA CAIXA DE TEXTO E CORREÇÃO DO ERRO DE DUPLICAÇÃO
-                    # Usamos st.code pois é o único componente com botão de copiar nativo.
-                    # O CSS injetado acima força a quebra de linha, fazendo ele parecer uma caixa de texto alta.
-                    # Chaves (keys) agora usam 'idx' do loop principal para garantir unicidade.
-                    
-                    st.code(msgs[0], language="markdown")
-                    
-                    with st.expander("Ver mais opções de mensagens"):
-                        for i, msg in enumerate(msgs[1:]):
-                            st.code(msg, language="markdown")
+                    <h3 style='margin-top: 5px; color: white; font-size: 1.3em;'>{evt.get('name') or evt.get('city')}</h3>
+                    {f"<div style='color: #aaa; font-size: 0.9em; margin-top:5px;'>Relacionado a: {evt.get('relatedTo')}</div>" if evt.get('relatedTo') else ""}
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # SUBSTITUIÇÃO DA CAIXA DE TEXTO E CORREÇÃO DO ERRO DE DUPLICAÇÃO
+                st.code(msgs[0], language="markdown")
+                
+                with st.expander("Ver mais opções de mensagens"):
+                    for i, msg in enumerate(msgs[1:]):
+                        st.code(msg, language="markdown")
 
     st.divider()
     
