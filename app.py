@@ -1,7 +1,6 @@
 import streamlit as st
 from datetime import datetime
 import locale
-import textwrap
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(
@@ -35,6 +34,7 @@ st.markdown("""
         background-color: #1a1a1a;
         border: 1px solid #444;
         text-align: center;
+        font-size: 1.2rem;
     }
     .stTextInput > div > div > input {
         background-color: #1a1a1a;
@@ -256,6 +256,7 @@ MASTER_EVENTS = [
     # ABRIL
     { "date": "19/04", "type": "Family", "name": "Ana Paula Lopes de Souza", "relatedTo": "Matheus Eustáquio" },
     { "date": "20/04", "type": "Birthday", "name": "Ernane José de Lima" },
+    { "date": "21/04", "type": "Family", "name": "Ana Paula Lopes de Souza", "relatedTo": "Ulisses (Esposa?)" },
     { "date": "26/04", "type": "Initiation", "name": "Alcirley Silva e Lopes" },
     { "date": "26/04", "type": "Initiation", "name": "Idalino Pereira Silva" },
     { "date": "29/04", "type": "Initiation", "name": "Carlos Eduardo Giovanni Correa" },
@@ -442,7 +443,7 @@ if not st.session_state['logged_in']:
         st.markdown("<br><br>", unsafe_allow_html=True)
         # Usando st.image para evitar erro de imagem quebrada
         try:
-            st.image('logo-magos.png', width=150)
+            st.image('logo-magos.png', width=300)
         except:
             st.markdown("<div style='text-align:center;'>Logo não encontrado</div>", unsafe_allow_html=True)
             
@@ -467,15 +468,15 @@ else:
         c1, c2 = st.columns([0.5, 3])
         with c1:
             try:
-                st.image('logo-magos.png', width=60)
+                st.image('logo-magos.png', width=100)
             except:
                 pass
         with c2:
-             st.markdown("<h3 style='margin-top:15px;'>MAGOS DO ORIENTE N° 149</h3>", unsafe_allow_html=True)
+             st.markdown("<h3 style='margin-top:35px;'>MAGOS DO ORIENTE N° 149</h3>", unsafe_allow_html=True)
 
     with col_h2:
         today_str = datetime.now().strftime("%d de %B de %Y")
-        st.markdown(f"<div style='text-align: right; color: #888; padding-top: 20px;'>{today_str}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: right; color: #888; padding-top: 40px;'>{today_str}</div>", unsafe_allow_html=True)
     
     st.divider()
 
@@ -487,7 +488,7 @@ else:
     col_v1, col_v2, col_v3 = st.columns([1,1,1])
     with col_v2:
         # Calendário para marcar a data
-        check_date = st.date_input("Selecione a Data para Verificar", datetime.now())
+        check_date = st.date_input("Selecione a Data para Verificar", datetime.now(), format="DD/MM/YYYY")
         
         if st.button("VERIFICAR AGORA", use_container_width=True):
             # Lógica de Verificação
@@ -563,20 +564,14 @@ else:
                     if fam.get('parents'):
                         fam_html += f"<div>👴 Pais: {', '.join(fam['parents'])}</div>"
                 
-                # CORREÇÃO DO ERRO DO </div>: 
-                # A string HTML agora está colada à margem esquerda (sem indentação)
-                # para evitar que o markdown do Streamlit interprete como código.
-                html_content = textwrap.dedent(f"""
-<div class='brother-card'>
-    <div class='card-title'>{bro['name']}</div>
-    <div class='card-info'>🎂 Nasc: {bro['birth'] or '-'}</div>
-    <div class='card-info'>💍 Casam: {bro['wedding'] or '-'}</div>
-    <div class='card-info'>🎓 Inic: {bro['init'] or '-'}</div>
-    <div class='card-info'>💼 Prof: {bro['job'] or '-'}</div>
-    <div class='card-info'>📍 Cid: {bro['city'] or '-'}</div>
-    <div class='card-family'>
-        {fam_html}
-    </div>
-</div>
-                """)
-                st.markdown(html_content, unsafe_allow_html=True)
+                # Construção HTML limpa sem indentação para evitar erros
+                html = f"""<div class='brother-card'>
+<div class='card-title'>{bro['name']}</div>
+<div class='card-info'>🎂 Nasc: {bro['birth'] or '-'}</div>
+<div class='card-info'>💍 Casam: {bro['wedding'] or '-'}</div>
+<div class='card-info'>🎓 Inic: {bro['init'] or '-'}</div>
+<div class='card-info'>💼 Prof: {bro['job'] or '-'}</div>
+<div class='card-info'>📍 Cid: {bro['city'] or '-'}</div>
+<div class='card-family'>{fam_html}</div>
+</div>"""
+                st.markdown(html, unsafe_allow_html=True)
