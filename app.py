@@ -262,9 +262,9 @@ def get_master_events():
     
     # 1. Eventos dos Irmãos
     for bro in BROTHERS:
-        if bro['birth']: events.append({"date": bro['birth'], "type": "Birthday", "name": bro['name']})
-        if bro['wedding']: events.append({"date": bro['wedding'], "type": "Wedding", "name": bro['name']})
-        if bro['init']: events.append({"date": bro['init'], "type": "Initiation", "name": bro['name']})
+        if bro['birth']: events.append({"date": bro['birth'], "type": "Aniversário", "name": bro['name']})
+        if bro['wedding']: events.append({"date": bro['wedding'], "type": "Casamento", "name": bro['name']})
+        if bro['init']: events.append({"date": bro['init'], "type": "Iniciação", "name": bro['name']})
         
         # 2. Eventos da Família
         fam = bro['family']
@@ -272,21 +272,21 @@ def get_master_events():
             if fam.get('wife') and '(' in str(fam['wife']):
                 name_part = fam['wife'].split('(')[0].strip()
                 date_part = fam['wife'].split('(')[1].replace(')', '').strip()
-                events.append({"date": date_part, "type": "Family", "name": name_part, "relatedTo": bro['name']})
+                events.append({"date": date_part, "type": "Família", "name": name_part, "relatedTo": bro['name']})
             
             if fam.get('children'):
                 for child in fam['children']:
                     if '(' in child:
                         name_part = child.split('(')[0].strip()
                         date_part = child.split('(')[1].replace(')', '').strip()
-                        events.append({"date": date_part, "type": "Family", "name": name_part, "relatedTo": bro['name']})
+                        events.append({"date": date_part, "type": "Família", "name": name_part, "relatedTo": bro['name']})
                         
             if fam.get('parents'):
                 for parent in fam['parents']:
                     if '(' in parent:
                         name_part = parent.split('(')[0].strip()
                         date_part = parent.split('(')[1].replace(')', '').strip()
-                        events.append({"date": date_part, "type": "Family", "name": name_part, "relatedTo": bro['name']})
+                        events.append({"date": date_part, "type": "Família", "name": name_part, "relatedTo": bro['name']})
 
     # 3. Eventos de Cidade
     cities = [
@@ -305,10 +305,10 @@ def get_master_events():
         {"city": "São Francisco do Glória", "date": "12/12"}
     ]
     for c in cities:
-        events.append({"date": c['date'], "type": "City", "city": c['city']})
+        events.append({"date": c['date'], "type": "Cidade", "city": c['city']})
 
     # 4. Aniversário da Loja
-    events.append({"date": "13/05", "type": "Lodge", "name": "ARLS Magos do Oriente Nº 149"})
+    events.append({"date": "13/05", "type": "Loja", "name": "ARLS Magos do Oriente Nº 149"})
     
     return events
 
@@ -334,7 +334,7 @@ def generate_templates(evt):
     
     templates = []
     
-    if evt['type'] == 'Birthday':
+    if evt['type'] == 'Aniversário':
         templates = [
             f"Parabéns, Ir. {name}! Que o Grande Arquiteto do Universo ilumine seus caminhos com muita saúde, paz e sabedoria. Feliz aniversário!",
             f"Hoje celebramos a vida do nosso Ir. {name}. Desejamos muita luz, prosperidade e um novo ciclo repleto de realizações. TFA!",
@@ -342,7 +342,7 @@ def generate_templates(evt):
             f"Nossas homenagens ao Ir. {name} nesta data querida. Que a vida continue lhe sorrindo com amor, saúde e sucesso.",
             f"Feliz aniversário, meu Irmão {name}! Que tenhas um dia fantástico cercado de carinho, bençãos e união."
         ]
-    elif evt['type'] == 'Family':
+    elif evt['type'] == 'Família':
         templates = [
             f"Parabéns a {name}{related} pelo aniversário! A Loja Magos do Oriente deseja muita saúde e alegrias junto à família.",
             f"Hoje é dia de festa para {name}! Que o GADU abençoe este novo ano de vida com muitas felicidades e harmonia no lar.",
@@ -350,7 +350,7 @@ def generate_templates(evt):
             f"Enviamos nosso carinho e votos de feliz aniversário para {name}. Tudo de bom e muitas realizações!",
             f"Celebramos hoje o aniversário de {name}. Muita luz, paz e proteção divina neste novo ciclo!"
         ]
-    elif evt['type'] == 'Wedding':
+    elif evt['type'] == 'Casamento':
         templates = [
             f"Parabéns ao Ir. {name} e esposa pelo aniversário de casamento! Que a união continue sendo fortalecida pelo amor e cumplicidade.",
             f"Feliz aniversário de casamento, Ir. {name}! Que o GADU continue abençoando essa bela união e a família constituída.",
@@ -358,7 +358,7 @@ def generate_templates(evt):
             f"Hoje comemoramos a união do Ir. {name}. Que a harmonia e o respeito reinem sempre em seu lar. Parabéns ao casal!",
             f"Votos de felicidades infinitas ao Ir. {name} e esposa. Que o laço que os une se torne cada dia mais forte e fraterno."
         ]
-    elif evt['type'] == 'Initiation':
+    elif evt['type'] == 'Iniciação':
         templates = [
             f"Parabéns, Ir. {name}, pelo seu aniversário de Iniciação! Que a Luz recebida continue guiando seus passos na senda da virtude.",
             f"Hoje celebramos o nascimento maçônico do Ir. {name}. Que continue lapidando sua Pedra Bruta com vigor e sabedoria. TFA!",
@@ -366,7 +366,7 @@ def generate_templates(evt):
             f"Nesta data especial, saudamos o Ir. {name} pelos anos de dedicação à nossa Ordem. Um verdadeiro exemplo de Obreiro!",
             f"Mais um ano de Luz na vida do Ir. {name}. Parabéns pela perseverança e pelo trabalho constante em prol da nossa Instituição."
         ]
-    elif evt['type'] == 'Profession':
+    elif evt['type'] == 'Profissão':
         templates = [
             f"Homenagem ao Ir. {name} pelo Dia do {job}! Obrigado por construir uma sociedade melhor com seu trabalho digno.",
             f"Parabéns aos profissionais de {job}, em especial ao nosso Ir. {name}. Sucesso e muitas realizações na carreira!",
@@ -374,7 +374,7 @@ def generate_templates(evt):
             f"Uma homenagem especial ao Ir. {name} nesta data dedicada ao {job}. Reconhecimento merecido pelo seu esforço!",
             f"Celebramos hoje o Dia do {job}. Parabéns, Ir. {name}, por exercer sua profissão com maestria e responsabilidade."
         ]
-    elif evt['type'] == 'City':
+    elif evt['type'] == 'Cidade':
         templates = [
             f"Parabéns à cidade de {city} pelo seu aniversário! Que continue crescendo e acolhendo a todos com hospitalidade.",
             f"Hoje {city} está em festa! Nossas homenagens a esta terra querida e aos irmãos que nela residem e trabalham.",
@@ -382,7 +382,7 @@ def generate_templates(evt):
             f"Parabéns, {city}! Que o progresso, a paz e a harmonia sejam constantes nesta cidade maravilhosa.",
             f"Dia de festa em {city}! Homenagem da ARLS Magos do Oriente Nº 149 a esta comunidade."
         ]
-    elif evt['type'] == 'Lodge':
+    elif evt['type'] == 'Loja':
         templates = [f"Parabéns ARLS Magos do Oriente Nº 149! Que a luz continue brilhando.", f"Dia de festa na Loja! Parabéns a todos os Obreiros.", f"Viva a Magos do Oriente! Anos de tradição e fraternidade."]
     else:
         templates = ["Parabéns!"]
@@ -433,7 +433,11 @@ else:
              st.markdown("<h3 style='margin-top:35px;'>MAGOS DO ORIENTE N° 149</h3>", unsafe_allow_html=True)
 
     with col_h2:
-        today_str = datetime.now().strftime("%d de %B de %Y")
+        # Data do sistema em português
+        today = datetime.now()
+        # Mapeamento manual para garantir
+        meses = {1:'Janeiro', 2:'Fevereiro', 3:'Março', 4:'Abril', 5:'Maio', 6:'Junho', 7:'Julho', 8:'Agosto', 9:'Setembro', 10:'Outubro', 11:'Novembro', 12:'Dezembro'}
+        today_str = f"{today.day} de {meses[today.month]} de {today.year}"
         st.markdown(f"<div style='text-align: right; color: #888; padding-top: 40px;'>{today_str}</div>", unsafe_allow_html=True)
     
     st.divider()
@@ -470,7 +474,7 @@ else:
                 for bro in BROTHERS:
                     if bro['job'] and PROFESSION_DATES.get(bro['job']) == date_str:
                         events.append({
-                            'type': 'Profession', 
+                            'type': 'Profissão', 
                             'name': bro['name'], 
                             'job': bro['job'], 
                             'date': date_str,
@@ -480,7 +484,7 @@ else:
                 # 3. Oficial de Justiça (Caso especial Matheus)
                 if date_str == "25/03":
                      events.append({ 
-                         'type': 'Profession', 
+                         'type': 'Profissão', 
                          'name': "Matheus Eustáquio Gomes de Faria", 
                          'job': "Oficial Judiciário", 
                          'date': date_str,
@@ -503,7 +507,7 @@ else:
                     
                     # Mostrar dia da semana
                     weekday_name = evt['full_date'].strftime("%A")
-                    days_map = {'Monday':'Segunda', 'Tuesday':'Terça', 'Wednesday':'Quarta', 'Thursday':'Quinta', 'Friday':'Sexta', 'Saturday':'Sábado', 'Sunday':'Domingo'}
+                    days_map = {'Monday':'Segunda-feira', 'Tuesday':'Terça-feira', 'Wednesday':'Quarta-feira', 'Thursday':'Quinta-feira', 'Friday':'Sexta-feira', 'Saturday':'Sábado', 'Sunday':'Domingo'}
                     pt_weekday = days_map.get(weekday_name, weekday_name)
                     
                     st.markdown(f"""
