@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import datetime
+from datetime import datetime, timedelta
 import locale
 import textwrap
 
@@ -42,6 +42,12 @@ st.markdown("""
         color: white;
         border: 1px solid #444;
         text-align: center;
+    }
+    .stTextArea > div > div > textarea {
+        background-color: #111;
+        color: #eee;
+        border: 1px solid #444;
+        font-family: monospace;
     }
     
     /* Botões */
@@ -129,7 +135,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- DADOS DOS IRMÃOS (Baseado estritamente no Texto 1-26 + Datas Família) ---
+# --- DADOS DOS IRMÃOS ---
 
 BROTHERS = [
     { 
@@ -441,59 +447,89 @@ else:
 
     # --- SEÇÃO SUPERIOR: VERIFICADOR DE EVENTOS ---
     
-    st.markdown("<h3 style='text-align: center; margin-bottom: 20px;'>VERIFICAR EVENTOS DA SEMANA</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; margin-bottom: 20px;'>VERIFICAR EVENTOS DA SEMANA (Seg-Dom)</h3>", unsafe_allow_html=True)
     
     col_v1, col_v2, col_v3 = st.columns([1,1,1])
     with col_v2:
         check_date = st.date_input("Selecione a Data para Verificar", datetime.now(), format="DD/MM/YYYY")
         
         if st.button("VERIFICAR AGORA", use_container_width=True):
-            day = check_date.strftime("%d")
-            month = check_date.strftime("%m")
-            date_str = f"{day}/{month}"
+            # Calcular início (Segunda) e fim (Domingo) da semana selecionada
+            start_of_week = check_date - timedelta(days=check_date.weekday())
+            week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
             
             events = []
             
-            # 1. Lista Mestre (Gerada dinamicamente)
-            for evt in MASTER_EVENTS:
-                if evt['date'] == date_str:
-                    events.append(evt)
-            
-            # 2. Profissões (Dinâmico)
-            for bro in BROTHERS:
-                if bro['job'] and PROFESSION_DATES.get(bro['job']) == date_str:
-                    events.append({ 'type': 'Profession', 'name': bro['name'], 'job': bro['job'], 'date': date_str })
-            
-            # 3. Oficial de Justiça (Caso especial Matheus se data bater)
-            if date_str == "25/03":
-                 events.append({ 'type': 'Profession', 'name': "Matheus Eustáquio Gomes de Faria", 'job': "Oficial Judiciário", 'date': date_str })
+            # Loop para cada dia da semana
+            for current_date in week_dates:
+                day = current_date.strftime("%d")
+                month = current_date.strftime("%m")
+                date_str = f"{day}/{month}"
+                
+                # 1. Lista Mestre
+                for evt in MASTER_EVENTS:
+                    if evt['date'] == date_str:
+                        evt_copy = evt.copy()
+                        evt_copy['full_date'] = current_date
+                        events.append(evt_copy)
+                
+                # 2. Profissões (Dinâmico)
+                for bro in BROTHERS:
+                    if bro['job'] and PROFESSION_DATES.get(bro['job']) == date_str:
+                        events.append({
+                            'type': 'Profession', 
+                            'name': bro['name'], 
+                            'job': bro['job'], 
+                            'date': date_str,
+                            'full_date': current_date
+                        })
+                
+                # 3. Oficial de Justiça (Caso especial Matheus)
+                if date_str == "25/03":
+                     events.append({ 
+                         'type': 'Profession', 
+                         'name': "Matheus Eustáquio Gomes de Faria", 
+                         'job': "Oficial Judiciário", 
+                         'date': date_str,
+                         'full_date': current_date
+                     })
 
             st.markdown("<br>", unsafe_allow_html=True)
+            
             if not events:
-                st.info(f"Nenhum evento encontrado para {date_str}.")
+                st.info(f"Nenhum evento encontrado para a semana de {start_of_week.strftime('%d/%m')} a {(start_of_week + timedelta(days=6)).strftime('%d/%m')}.")
             else:
-                st.success(f"{len(events)} evento(s) encontrado(s) para {date_str}!")
+                st.success(f"{len(events)} evento(s) encontrado(s) para a semana!")
+                
+                # Ordenar eventos por data dentro da semana
+                events.sort(key=lambda x: x['full_date'])
                 
                 for evt in events:
                     msgs = generate_templates(evt)
+                    
+                    # Mostrar dia da semana
+                    weekday_name = evt['full_date'].strftime("%A")
+                    # Tradução simples dos dias
+                    days_map = {'Monday':'Segunda', 'Tuesday':'Terça', 'Wednesday':'Quarta', 'Thursday':'Quinta', 'Friday':'Sexta', 'Saturday':'Sábado', 'Sunday':'Domingo'}
+                    pt_weekday = days_map.get(weekday_name, weekday_name)
                     
                     st.markdown(f"""
                     <div class='result-card'>
                         <div class='result-header'>
                             <span>{evt['type']}</span>
-                            <span>{evt['date']}</span>
+                            <span>{evt['date']} ({pt_weekday})</span>
                         </div>
                         <h3 style='margin-top: 5px; color: white; font-size: 1.3em;'>{evt.get('name') or evt.get('city')}</h3>
                         {f"<div style='color: #aaa; font-size: 0.9em; margin-top:5px;'>Relacionado a: {evt.get('relatedTo')}</div>" if evt.get('relatedTo') else ""}
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    # Usando st.code para texto copiável limpo
-                    st.code(msgs[0], language="text")
+                    # Usando st.text_area para melhor visualização e cópia
+                    st.text_area("Mensagem Principal", value=msgs[0], height=100, key=f"main_{evt.get('name')}_{evt['date']}_{evt['type']}")
                     
                     with st.expander("Ver mais opções de mensagens"):
-                        for msg in msgs[1:]:
-                            st.code(msg, language="text")
+                        for i, msg in enumerate(msgs[1:]):
+                            st.text_area(f"Opção {i+2}", value=msg, height=100, key=f"opt_{i}_{evt.get('name')}_{evt['date']}_{evt['type']}")
 
     st.divider()
     
