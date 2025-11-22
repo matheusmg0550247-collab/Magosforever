@@ -1,6 +1,7 @@
 import streamlit as st
-from datetime import datetime, date
+from datetime import datetime
 import locale
+import textwrap
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(
@@ -10,14 +11,14 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Tentar configurar locale para português (pode variar dependendo do SO)
+# Tentar configurar locale para português
 try:
     locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 except:
     try:
         locale.setlocale(locale.LC_ALL, 'pt_BR')
     except:
-        pass # Mantém padrão se falhar
+        pass
 
 # --- ESTILOS CSS (Preto e Branco) ---
 st.markdown("""
@@ -28,7 +29,13 @@ st.markdown("""
         color: #e0e0e0;
     }
     
-    /* Inputs */
+    /* Inputs de Data e Texto */
+    .stDateInput > div > div > input {
+        color: white;
+        background-color: #1a1a1a;
+        border: 1px solid #444;
+        text-align: center;
+    }
     .stTextInput > div > div > input {
         background-color: #1a1a1a;
         color: white;
@@ -43,6 +50,7 @@ st.markdown("""
         font-weight: bold !important;
         border-radius: 4px !important;
         border: none !important;
+        height: 3em;
         transition: all 0.3s ease;
     }
     .stButton > button:hover {
@@ -50,32 +58,14 @@ st.markdown("""
         transform: translateY(-2px);
     }
 
-    /* Cards (Simulados com Container) */
-    .css-1r6slb0 {
-        background-color: #121212;
-        border: 1px solid #333;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(255, 255, 255, 0.05);
-    }
-
-    /* Títulos */
-    h1, h2, h3 {
-        color: white !important;
-    }
-    
-    /* Remove barra superior padrão do Streamlit */
-    header[data-testid="stHeader"] {
-        background-color: #000000;
-    }
-    
-    /* Ajuste de cards personalizados */
+    /* Cards Personalizados */
     .brother-card {
         background-color: #121212;
         border: 1px solid #333;
         padding: 15px;
         border-radius: 8px;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
+        box-shadow: 0 4px 6px rgba(255, 255, 255, 0.05);
     }
     .card-title {
         font-weight: bold;
@@ -88,6 +78,7 @@ st.markdown("""
     .card-info {
         font-size: 0.9em;
         color: #bbb;
+        margin-bottom: 4px;
     }
     .card-family {
         margin-top: 10px;
@@ -96,6 +87,19 @@ st.markdown("""
         font-size: 0.8em;
         color: #888;
     }
+    
+    /* Títulos e Cabeçalhos */
+    h1, h2, h3, h4, p, div, span {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    h3 {
+        color: white !important;
+    }
+
+    /* Esconder menu padrão */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -148,7 +152,7 @@ BROTHERS = [
     },
     { 
         "name": "Matheus Eustáquio Gomes de Faria", "birth": "04/12", "wedding": "28/10", "init": "13/12", "job": "Servidor Público", "city": "Belo Horizonte",
-        "family": { "wife": None, "children": [], "parents": ["José Eustáquio de Faria", "Sílvia de Fátima Faria"] }
+        "family": { "wife": "Ana Paula Lopes de Souza", "children": [], "parents": ["José Eustáquio de Faria", "Sílvia de Fátima Faria"] }
     },
     { 
         "name": "Mário Edésio Araújo Melo", "birth": "06/05", "wedding": None, "init": "27/10", "job": "Militar Reformado", "city": "Dom Cavati",
@@ -250,8 +254,8 @@ MASTER_EVENTS = [
     { "date": "30/03", "type": "Initiation", "name": "Marcondes Vanderlei Fonseca Ribeiro" },
 
     # ABRIL
+    { "date": "19/04", "type": "Family", "name": "Ana Paula Lopes de Souza", "relatedTo": "Matheus Eustáquio" },
     { "date": "20/04", "type": "Birthday", "name": "Ernane José de Lima" },
-    { "date": "21/04", "type": "Family", "name": "Ana Paula Lopes de Souza", "relatedTo": "Ulisses (Esposa?)" },
     { "date": "26/04", "type": "Initiation", "name": "Alcirley Silva e Lopes" },
     { "date": "26/04", "type": "Initiation", "name": "Idalino Pereira Silva" },
     { "date": "29/04", "type": "Initiation", "name": "Carlos Eduardo Giovanni Correa" },
@@ -405,7 +409,7 @@ def generate_templates(evt):
         templates = [
             f"Homenagem ao Ir. {name} pelo Dia do {job}! Obrigado por construir uma sociedade melhor com seu trabalho.",
             f"Parabéns aos profissionais de {job}, em especial ao nosso Ir. {name}. Sucesso e realizações!",
-            f"Dia do {job}! Nossos cumprimentos ao Ir. ${name} pela dedicação e excelência profissional.",
+            f"Dia do {job}! Nossos cumprimentos ao Ir. {name} pela dedicação e excelência profissional.",
             f"Uma homenagem especial ao Ir. {name} nesta data dedicada ao {job}. Reconhecimento merecido!",
             f"Celebramos hoje o Dia do {job}. Parabéns, Ir. {name}, por exercer sua profissão com maestria."
         ]
@@ -435,7 +439,13 @@ if not st.session_state['logged_in']:
     # TELA DE LOGIN
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
-        st.markdown("<div style='text-align: center; margin-bottom: 20px;'><img src='logo-magos.png' onerror='this.style.display=\"none\"' width='150' style='border-radius:50%; border: 2px solid #333;'></div>", unsafe_allow_html=True)
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        # Usando st.image para evitar erro de imagem quebrada
+        try:
+            st.image('logo-magos.png', width=150)
+        except:
+            st.markdown("<div style='text-align:center;'>Logo não encontrado</div>", unsafe_allow_html=True)
+            
         st.markdown("<h2 style='text-align: center;'>ACESSO RESTRITO</h2>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #888;'>Magos do Oriente N° 149</p>", unsafe_allow_html=True)
         
@@ -450,67 +460,35 @@ if not st.session_state['logged_in']:
 else:
     # TELA PRINCIPAL
     
-    # Header
+    # Cabeçalho
     col_h1, col_h2 = st.columns([3, 1])
     with col_h1:
-        st.markdown("""
-        <div style='display: flex; align-items: center; gap: 10px;'>
-            <img src='logo-magos.png' width='50' style='border-radius:50%; border: 1px solid #666;'>
-            <h3 style='margin:0;'>MAGOS DO ORIENTE N° 149</h3>
-        </div>
-        """, unsafe_allow_html=True)
+        # Layout flex para logo e título
+        c1, c2 = st.columns([0.5, 3])
+        with c1:
+            try:
+                st.image('logo-magos.png', width=60)
+            except:
+                pass
+        with c2:
+             st.markdown("<h3 style='margin-top:15px;'>MAGOS DO ORIENTE N° 149</h3>", unsafe_allow_html=True)
+
     with col_h2:
         today_str = datetime.now().strftime("%d de %B de %Y")
-        st.markdown(f"<div style='text-align: right; color: #888; padding-top: 10px;'>{today_str}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: right; color: #888; padding-top: 20px;'>{today_str}</div>", unsafe_allow_html=True)
     
     st.divider()
+
+    # --- SEÇÃO SUPERIOR: VERIFICADOR DE EVENTOS (Calendário) ---
     
-    # Carrossel (Grid)
-    st.markdown("#### QUADRO DE OBREIROS")
+    st.markdown("<h3 style='text-align: center; margin-bottom: 20px;'>VERIFICAR EVENTOS</h3>", unsafe_allow_html=True)
     
-    # Filtro opcional
-    # search = st.text_input("Buscar Irmão", placeholder="Digite o nome...")
-    
-    # Grid de Cards
-    filtered_brothers = sorted(BROTHERS, key=lambda x: x['name'])
-    
-    # Paginação simples ou scroll (Streamlit carrega tudo, use expander para economizar espaço se quiser)
-    with st.container():
-        cols = st.columns(3)
-        for i, bro in enumerate(filtered_brothers):
-            with cols[i % 3]:
-                fam = bro['family']
-                fam_html = ""
-                if fam:
-                    if fam.get('wife'):
-                        fam_html += f"<div>❤️ Esposa: {fam['wife']}</div>"
-                    if fam.get('children'):
-                        fam_html += f"<div>👶 Filhos: {', '.join(fam['children'])}</div>"
-                    if fam.get('parents'):
-                        fam_html += f"<div>👴 Pais: {', '.join(fam['parents'])}</div>"
-                
-                st.markdown(f"""
-                <div class='brother-card'>
-                    <div class='card-title'>{bro['name']}</div>
-                    <div class='card-info'>🎂 Nasc: {bro['birth'] or '-'}</div>
-                    <div class='card-info'>💍 Casam: {bro['wedding'] or '-'}</div>
-                    <div class='card-info'>🎓 Inic: {bro['init'] or '-'}</div>
-                    <div class='card-info'>💼 Prof: {bro['job'] or '-'}</div>
-                    <div class='card-info'>📍 Cid: {bro['city'] or '-'}</div>
-                    <div class='card-family'>
-                        {fam_html}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-    st.divider()
-    
-    # Verificador
-    st.markdown("<h3 style='text-align: center;'>VERIFICAR EVENTOS</h3>", unsafe_allow_html=True)
-    
-    col_v1, col_v2, col_v3 = st.columns([1,2,1])
+    # Container centralizado para o calendário
+    col_v1, col_v2, col_v3 = st.columns([1,1,1])
     with col_v2:
-        check_date = st.date_input("Selecione a Data", datetime.now())
+        # Calendário para marcar a data
+        check_date = st.date_input("Selecione a Data para Verificar", datetime.now())
+        
         if st.button("VERIFICAR AGORA", use_container_width=True):
             # Lógica de Verificação
             day = check_date.strftime("%d")
@@ -533,7 +511,8 @@ else:
             if date_str == "13/05":
                 events.append({ 'type': 'Lodge', 'name': 'ARLS Magos do Oriente', 'date': date_str })
 
-            # Exibição
+            # Exibição dos Resultados (Abaixo do botão)
+            st.markdown("<br>", unsafe_allow_html=True)
             if not events:
                 st.info(f"Nenhum evento encontrado para {date_str}.")
             else:
@@ -543,23 +522,61 @@ else:
                 for evt in events:
                     msgs = generate_templates(evt)
                     
-                    # Card de Resultado
-                    with st.container():
-                        st.markdown(f"""
-                        <div style='background-color: #222; border: 1px solid #555; padding: 15px; border-radius: 8px; margin-bottom: 15px;'>
-                            <div style='display:flex; justify-content:space-between; color: #aaa; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px;'>
-                                <span>{evt['type']}</span>
-                                <span>{evt['date']}</span>
-                            </div>
-                            <h3 style='margin-top: 5px; color: white;'>{evt.get('name') or evt.get('city')}</h3>
-                            {f"<div style='color: #888; font-size: 0.8em;'>Relacionado a: {evt['relatedTo']}</div>" if evt.get('relatedTo') else ""}
+                    st.markdown(f"""
+                    <div style='background-color: #222; border: 1px solid #555; padding: 15px; border-radius: 8px; margin-bottom: 10px;'>
+                        <div style='display:flex; justify-content:space-between; color: #aaa; font-size: 0.8em; text-transform: uppercase; letter-spacing: 1px;'>
+                            <span>{evt['type']}</span>
+                            <span>{evt['date']}</span>
                         </div>
-                        """, unsafe_allow_html=True)
-                        
-                        # Área de Código para Copiar
-                        # Streamlit code block tem botão de copiar nativo
-                        st.code(msgs[0], language="text")
+                        <h3 style='margin-top: 5px; color: white; font-size: 1.2em;'>{evt.get('name') or evt.get('city')}</h3>
+                        {f"<div style='color: #888; font-size: 0.8em;'>Relacionado a: {evt.get('relatedTo')}</div>" if evt.get('relatedTo') else ""}
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Opções de texto para copiar
+                    st.code(msgs[0], language="text")
+                    with st.expander("Ver mais opções de mensagens"):
                         st.code(msgs[1], language="text")
                         st.code(msgs[2], language="text")
-                        
-                        # Randomize button logic requires session state per card, simpler to just show options
+                        st.code(msgs[3], language="text")
+                        st.code(msgs[4], language="text")
+
+    st.divider()
+    
+    # --- QUADRO DE OBREIROS ---
+    st.markdown("#### QUADRO DE OBREIROS")
+    
+    # Grid de Cards
+    filtered_brothers = sorted(BROTHERS, key=lambda x: x['name'])
+    
+    with st.container():
+        cols = st.columns(3)
+        for i, bro in enumerate(filtered_brothers):
+            with cols[i % 3]:
+                fam = bro['family']
+                fam_html = ""
+                if fam:
+                    if fam.get('wife'):
+                        fam_html += f"<div>❤️ Esposa: {fam['wife']}</div>"
+                    if fam.get('children'):
+                        fam_html += f"<div>👶 Filhos: {', '.join(fam['children'])}</div>"
+                    if fam.get('parents'):
+                        fam_html += f"<div>👴 Pais: {', '.join(fam['parents'])}</div>"
+                
+                # CORREÇÃO DO ERRO DO </div>: 
+                # A string HTML agora está colada à margem esquerda (sem indentação)
+                # para evitar que o markdown do Streamlit interprete como código.
+                html_content = textwrap.dedent(f"""
+<div class='brother-card'>
+    <div class='card-title'>{bro['name']}</div>
+    <div class='card-info'>🎂 Nasc: {bro['birth'] or '-'}</div>
+    <div class='card-info'>💍 Casam: {bro['wedding'] or '-'}</div>
+    <div class='card-info'>🎓 Inic: {bro['init'] or '-'}</div>
+    <div class='card-info'>💼 Prof: {bro['job'] or '-'}</div>
+    <div class='card-info'>📍 Cid: {bro['city'] or '-'}</div>
+    <div class='card-family'>
+        {fam_html}
+    </div>
+</div>
+                """)
+                st.markdown(html_content, unsafe_allow_html=True)
