@@ -1,7 +1,6 @@
 import streamlit as st
 from datetime import datetime, timedelta
 import locale
-import textwrap
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(
@@ -114,7 +113,8 @@ st.markdown("""
         margin-bottom: 5px;
     }
     
-    /* Ajuste para o st.code (Caixa de Mensagem) */
+    /* Ajuste CRÍTICO para o st.code (Caixa de Mensagem) */
+    /* Força quebra de linha e remove barra horizontal */
     code {
         white-space: pre-wrap !important;
         font-family: 'Courier New', Courier, monospace !important;
@@ -423,17 +423,15 @@ if not st.session_state['logged_in']:
 else:
     # TELA PRINCIPAL
     
-    # Cabeçalho com Logo Maior
+    # Cabeçalho com Logo Maior (Aumentado para 350)
     col_h1, col_h2 = st.columns([1, 2])
     with col_h1:
         try:
-            # Aumentado de 100 para 250 para ficar "maior assim que entra"
-            st.image('logo-magos.png', width=250)
+            st.image('logo-magos.png', width=350)
         except:
             pass
     with col_h2:
-         # Alinhamento vertical do texto para ficar harmonico com o logo maior
-         st.markdown("<h1 style='margin-top: 40px; font-size: 2.5em;'>MAGOS DO ORIENTE N° 149</h1>", unsafe_allow_html=True)
+         st.markdown("<h1 style='margin-top: 60px; font-size: 2.5em;'>MAGOS DO ORIENTE N° 149</h1>", unsafe_allow_html=True)
 
     # Data de Hoje (Formatada em PT-BR manualmente)
     today = datetime.now()
@@ -447,14 +445,15 @@ else:
     
     st.markdown("<h3 style='text-align: center; margin-bottom: 20px;'>VERIFICAR EVENTOS DA SEMANA (Segunda a Domingo)</h3>", unsafe_allow_html=True)
     
-    # SELETOR DE DATA PERSONALIZADO (Em Português e Visível)
+    # SELETOR DE DATA PERSONALIZADO (Sem Ano - Apenas Dia e Mês)
     c_container = st.container()
     with c_container:
-        col_d1, col_d2, col_d3 = st.columns([1, 2, 1])
+        col_d1, col_d2 = st.columns([1, 2])
         
         # Valores Padrão
         default_day = today.day
         default_month_idx = today.month - 1
+        # O ano será sempre o atual internamente
         default_year = today.year
         
         with col_d1:
@@ -462,24 +461,17 @@ else:
         with col_d2:
             meses_lista = list(meses_pt_dict.values())
             sel_mes_nome = st.selectbox("Mês", meses_lista, index=default_month_idx)
-        with col_d3:
-            # Anos de 2024 a 2030
-            anos_lista = list(range(2024, 2031))
-            try:
-                ano_idx = anos_lista.index(default_year)
-            except:
-                ano_idx = 0
-            sel_ano = st.selectbox("Ano", anos_lista, index=ano_idx)
 
         # Converter seleção para objeto date
         sel_mes_num = meses_lista.index(sel_mes_nome) + 1
         
         valid_date = True
         try:
-            check_date = datetime(sel_ano, sel_mes_num, sel_dia).date()
+            # Tenta criar data com ano atual. Se for 29/02 e não for bissexto, vai falhar.
+            check_date = datetime(default_year, sel_mes_num, sel_dia).date()
         except ValueError:
             valid_date = False
-            st.error("Data inválida (ex: 31 de Fevereiro). Verifique a seleção.")
+            st.error(f"Data inválida para o ano atual ({sel_dia}/{sel_mes_num}). Verifique a seleção.")
 
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -490,7 +482,6 @@ else:
         
     if btn_verificar and valid_date:
         # Calcular início (Segunda) e fim (Domingo) da semana selecionada
-        # weekday(): 0=Segunda, 6=Domingo
         start_of_week = check_date - timedelta(days=check_date.weekday())
         week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
         
