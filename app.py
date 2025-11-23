@@ -172,7 +172,7 @@ BROTHERS = [
     },
     { 
         "name": "Cláudio Luis Gomes", "birth": "18/08", "wedding": None, "init": "06/12", "job": "Representante Comercial", "city": "Coronel Fabriciano",
-        "family": { "wife": "Vera Regina Soares Pacheco", "children": ["Gláucia Azevedo Gomes (01/06)", "Fernanda Azevedo Teixeira (20/06)", "Barbara Pacheco Bonfim (25/11)", "Matheus Henrique (04/06)", "Eduardo Antonio (25/05)", "Thifany Maria (30/12)", "Daniel Calebe (18/05)"], "parents": ["Sebastião Gomes da Silva", "Nair Alvarenga da Silva"] }
+        "family": { "wife": "Vera Regina Soares Pacheco", "children": ["Gláucia Azevedo Gomes (01/06)", "Fernanda Azevedo Teixeira (20/06)", "Barbara Pacheco Bonfim (23/11)", "Matheus Henrique (04/06)", "Eduardo Antonio (25/05)", "Thifany Maria (30/12)", "Daniel Calebe (18/05)"], "parents": ["Sebastião Gomes da Silva", "Nair Alvarenga da Silva"] }
     },
     { 
         "name": "Carlos Eduardo Giovanni Correa", "birth": "10/05", "wedding": "11/10", "init": "27/04", "job": "Engenheiro Civil", "city": "Ibirité",
