@@ -13,15 +13,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Tentar configurar locale para português
-try:
-    locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
-except:
-    try:
-        locale.setlocale(locale.LC_ALL, 'pt_BR')
-    except:
-        pass
-
 # --- ARQUIVO DE BANCO DE DADOS (JSON) ---
 DB_FILE = "dados_tronco.json"
 
@@ -48,6 +39,7 @@ st.markdown("""
     .stTextInput > div > div > input { background-color: #1a1a1a; color: white; border: 1px solid #444; text-align: center; }
     .stNumberInput > div > div > input { background-color: #1a1a1a; color: white; border: 1px solid #444; text-align: center; }
     
+    /* Estilo Geral dos Botões */
     .stButton > button {
         background-color: #ffffff !important;
         color: #000000 !important;
@@ -55,6 +47,7 @@ st.markdown("""
         border-radius: 4px !important;
         border: none !important;
         height: 3em;
+        width: 100%;
         text-transform: uppercase;
         transition: all 0.3s ease;
     }
@@ -63,10 +56,13 @@ st.markdown("""
         transform: translateY(-2px);
     }
     
-    /* Botão de Perigo (Zerar) */
+    /* Botão de Perigo (Zerar) - Sobrescreve a cor de fundo */
     .btn-danger > button {
         background-color: #e74c3c !important;
         color: white !important;
+    }
+    .btn-danger > button:hover {
+        background-color: #c0392b !important;
     }
 
     /* Cards */
@@ -236,7 +232,12 @@ def generate_templates(evt):
 
 def create_html_calendar(year, month, events_map):
     cal = calendar.monthcalendar(year, month)
-    month_name = calendar.month_name[month].capitalize()
+    # TRADUÇÃO MANUAL PARA PORTUGUÊS (Garante que funcione em qualquer servidor)
+    MESES_PT = {
+        1: 'JANEIRO', 2: 'FEVEREIRO', 3: 'MARÇO', 4: 'ABRIL', 5: 'MAIO', 6: 'JUNHO',
+        7: 'JULHO', 8: 'AGOSTO', 9: 'SETEMBRO', 10: 'OUTUBRO', 11: 'NOVEMBRO', 12: 'DEZEMBRO'
+    }
+    month_name = MESES_PT[month]
     
     html = f"<div class='cal-container'><div class='cal-month-title'>{month_name} {year}</div>"
     html += "<table class='cal-table'><thead><tr><th>D</th><th>S</th><th>T</th><th>Q</th><th>Q</th><th>S</th><th>S</th></tr></thead><tbody>"
@@ -428,7 +429,9 @@ else:
             
             t_value = st.number_input("Valor (R$)", min_value=0.0, step=10.0, format="%.2f")
             
-            col_act1, col_act2 = st.columns(2)
+            # CRIA COLUNAS IGUAIS (50/50) PARA ALINHAR BOTÕES
+            col_act1, col_act2 = st.columns([1, 1])
+            
             with col_act1:
                 if st.button("ENVIAR LANÇAMENTO", use_container_width=True):
                     # Se a data ainda não existe no DB, cria
@@ -445,7 +448,7 @@ else:
                     st.rerun()
             
             with col_act2:
-                # Botão para zerar o dia específico
+                # O CSS .btn-danger já garante o estilo, a coluna garante o alinhamento
                 st.markdown('<div class="btn-danger">', unsafe_allow_html=True)
                 if st.button("ZERAR ESTE DIA", use_container_width=True):
                     if t_date in tronco_db:
