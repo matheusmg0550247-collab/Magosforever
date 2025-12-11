@@ -2,6 +2,8 @@ import streamlit as st
 from datetime import datetime, timedelta
 import locale
 import calendar
+import json
+import os
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(
@@ -19,6 +21,24 @@ except:
         locale.setlocale(locale.LC_ALL, 'pt_BR')
     except:
         pass
+
+# --- ARQUIVO DE BANCO DE DADOS (JSON) ---
+DB_FILE = "dados_tronco.json"
+
+def load_data():
+    """Carrega os dados do arquivo JSON se existir"""
+    if os.path.exists(DB_FILE):
+        try:
+            with open(DB_FILE, "r") as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_data(data):
+    """Salva os dados no arquivo JSON"""
+    with open(DB_FILE, "w") as f:
+        json.dump(data, f)
 
 # --- ESTILOS CSS ---
 st.markdown("""
@@ -41,6 +61,12 @@ st.markdown("""
     .stButton > button:hover {
         background-color: #cccccc !important;
         transform: translateY(-2px);
+    }
+    
+    /* Botão de Perigo (Zerar) */
+    .btn-danger > button {
+        background-color: #e74c3c !important;
+        color: white !important;
     }
 
     /* Cards */
@@ -82,7 +108,6 @@ st.markdown("""
     .cal-day-online { background-color: #2ecc71; color: black; font-weight: bold; border-radius: 50%; }
     .cal-day-analise { background-color: #f39c12; color: black; font-weight: bold; border-radius: 50%; }
 
-    /* Code Block Tweak */
     code { white-space: pre-wrap !important; font-family: 'Courier New', monospace !important; font-size: 1rem !important; }
     h1, h2, h3 { color: white !important; font-family: 'Segoe UI', sans-serif; }
     #MainMenu, footer, header { visibility: hidden; }
@@ -126,10 +151,10 @@ BROTHERS = [
 # --- LISTA MESTRE ---
 MASTER_EVENTS = [
     # --- REUNIÕES 2026 (1º SEMESTRE) ---
-    # Fevereiro (Adicionado)
+    # Fevereiro
     {"date": "06/02", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
     {"date": "20/02", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
-    # Março (Adicionado)
+    # Março
     {"date": "06/03", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
     {"date": "20/03", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
     # Abril
@@ -267,13 +292,11 @@ else:
     with tabs[0]:
         st.markdown("### CALENDÁRIO 2026 (1º SEMESTRE)")
         
-        # Mapa de eventos para o calendário visual
         events_map = {}
         for evt in MASTER_EVENTS:
             if evt['type'] == 'Reunião' and evt.get('year') == 2026:
                 events_map[evt['date']] = evt.get('style', 'presencial')
 
-        # Legenda
         st.markdown("""
         <div style='display:flex; gap:15px; justify-content:center; margin-bottom:10px; font-size:0.8em;'>
             <span style='color:#e74c3c;'>● Presencial</span>
@@ -321,7 +344,6 @@ else:
             for current_date in week_dates:
                 day_str = f"{current_date.day:02d}/{current_date.month:02d}"
                 
-                # Buscas nos dados (igual código anterior)
                 daily_births = [b['name'] for b in BROTHERS if b['birth'] == day_str]
                 if daily_births: found_events.append({'date': day_str, 'type': 'Aniversário', 'names': daily_births, 'full_date': current_date})
                 
@@ -387,15 +409,13 @@ else:
                     </div>""", unsafe_allow_html=True)
                     st.code(msgs[0], language="markdown")
 
-    # ---------------- TAB 2: TRONCO ----------------
+    # ---------------- TAB 2: TRONCO (PERSISTENTE) ----------------
     with tabs[1]:
         st.markdown("### LANÇAMENTO DE TRONCO")
         
-        # Inicializa estado para guardar totais
-        if 'tronco_totals' not in st.session_state:
-            st.session_state.tronco_totals = {}
+        # Carrega dados do arquivo no início
+        tronco_db = load_data()
 
-        # 1. Filtra apenas datas que são reuniões em 2026
         meeting_dates = [evt['date'] + "/2026" for evt in MASTER_EVENTS if evt['type'] == "Reunião" and evt.get('year') == 2026]
         
         with st.container():
@@ -403,45 +423,65 @@ else:
             with col_t1:
                 t_date = st.selectbox("Data da Sessão", meeting_dates)
             with col_t2:
-                # Ordena lista de irmãos
                 brother_names = sorted([b['name'] for b in BROTHERS])
                 t_brother = st.selectbox("Irmão", brother_names)
             
             t_value = st.number_input("Valor (R$)", min_value=0.0, step=10.0, format="%.2f")
             
-            if st.button("ENVIAR LANÇAMENTO", use_container_width=True):
-                # Chave única para o dia
-                if t_date not in st.session_state.tronco_totals:
-                    st.session_state.tronco_totals[t_date] = 0.0
-                
-                st.session_state.tronco_totals[t_date] += t_value
-                st.toast(f"Lançamento de R$ {t_value:.2f} para {t_brother} realizado com sucesso!", icon="✅")
+            col_act1, col_act2 = st.columns(2)
+            with col_act1:
+                if st.button("ENVIAR LANÇAMENTO", use_container_width=True):
+                    # Se a data ainda não existe no DB, cria
+                    if t_date not in tronco_db:
+                        tronco_db[t_date] = {'total': 0.0, 'logs': []}
+                    
+                    tronco_db[t_date]['total'] += t_value
+                    # Adiciona log simples
+                    tronco_db[t_date]['logs'].append(f"{t_brother}: R$ {t_value:.2f}")
+                    
+                    # Salva no arquivo
+                    save_data(tronco_db)
+                    st.toast(f"Lançamento de R$ {t_value:.2f} salvo!", icon="💾")
+                    st.rerun()
+            
+            with col_act2:
+                # Botão para zerar o dia específico
+                st.markdown('<div class="btn-danger">', unsafe_allow_html=True)
+                if st.button("ZERAR ESTE DIA", use_container_width=True):
+                    if t_date in tronco_db:
+                        tronco_db[t_date] = {'total': 0.0, 'logs': []}
+                        save_data(tronco_db)
+                        st.toast(f"Valores do dia {t_date} apagados!", icon="🗑️")
+                        st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
         st.divider()
         
         # Exibição do Resultado
         st.markdown("#### RESUMO DA ARRECADAÇÃO")
         
-        # Mostra o total para a data selecionada atualmente (ou todas se preferir)
-        current_total = st.session_state.tronco_totals.get(t_date, 0.0)
+        # Recupera dados salvos
+        current_data = tronco_db.get(t_date, {'total': 0.0, 'logs': []})
+        current_total = current_data['total']
         
         st.markdown(f"""
         <div style='background-color:#1a1a1a; padding:20px; border-radius:10px; border: 1px solid #444; text-align:center;'>
             <h2 style='color:#2ecc71; margin:0;'>{t_date} - Tronco arrecadado: {current_total:.2f} reais</h2>
         </div>
         """, unsafe_allow_html=True)
+        
+        # Mostra logs recentes do dia
+        if current_data['logs']:
+            with st.expander("Ver lançamentos deste dia"):
+                for log in current_data['logs']:
+                    st.text(log)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Área do PIX
         st.markdown("#### DADOS PARA DEPÓSITO (PIX)")
         pix_key = "38731048000142"
-        
         col_pix1, col_pix2 = st.columns([3, 1])
-        with col_pix1:
-            st.code(pix_key, language="text")
-        with col_pix2:
-            st.markdown("Use a chave acima no seu banco.")
+        with col_pix1: st.code(pix_key, language="text")
+        with col_pix2: st.markdown("Use a chave acima no seu banco.")
 
     # ---------------- TAB 3: OBREIROS ----------------
     with tabs[2]:
