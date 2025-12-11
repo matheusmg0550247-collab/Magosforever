@@ -39,8 +39,10 @@ st.markdown("""
     .stTextInput > div > div > input { background-color: #1a1a1a; color: white; border: 1px solid #444; text-align: center; }
     .stNumberInput > div > div > input { background-color: #1a1a1a; color: white; border: 1px solid #444; text-align: center; }
     
-    /* Estilo Geral dos Botões */
-    .stButton > button {
+    /* --- ESTILO DOS BOTÕES --- */
+    
+    /* Botão Padrão (Secondary) -> BRANCO (Usado no ENVIAR) */
+    .stButton > button[kind="secondary"] {
         background-color: #ffffff !important;
         color: #000000 !important;
         font-weight: bold !important;
@@ -51,18 +53,26 @@ st.markdown("""
         text-transform: uppercase;
         transition: all 0.3s ease;
     }
-    .stButton > button:hover {
+    .stButton > button[kind="secondary"]:hover {
         background-color: #cccccc !important;
         transform: translateY(-2px);
     }
-    
-    /* Botão de Perigo (Zerar) - Sobrescreve a cor de fundo */
-    .btn-danger > button {
+
+    /* Botão Primário (Primary) -> VERMELHO (Usado no ZERAR) */
+    .stButton > button[kind="primary"] {
         background-color: #e74c3c !important;
-        color: white !important;
+        color: #ffffff !important;
+        font-weight: bold !important;
+        border-radius: 4px !important;
+        border: none !important;
+        height: 3em;
+        width: 100%;
+        text-transform: uppercase;
+        transition: all 0.3s ease;
     }
-    .btn-danger > button:hover {
+    .stButton > button[kind="primary"]:hover {
         background-color: #c0392b !important;
+        transform: translateY(-2px);
     }
 
     /* Cards */
@@ -232,7 +242,6 @@ def generate_templates(evt):
 
 def create_html_calendar(year, month, events_map):
     cal = calendar.monthcalendar(year, month)
-    # TRADUÇÃO MANUAL PARA PORTUGUÊS (Garante que funcione em qualquer servidor)
     MESES_PT = {
         1: 'JANEIRO', 2: 'FEVEREIRO', 3: 'MARÇO', 4: 'ABRIL', 5: 'MAIO', 6: 'JUNHO',
         7: 'JULHO', 8: 'AGOSTO', 9: 'SETEMBRO', 10: 'OUTUBRO', 11: 'NOVEMBRO', 12: 'DEZEMBRO'
@@ -331,7 +340,7 @@ else:
                 sel_mes_nome = st.selectbox("Mês", meses_list, index=today.month-1)
             with col_btn: 
                 st.markdown("<br>", unsafe_allow_html=True)
-                btn_verificar = st.button("VERIFICAR", use_container_width=True)
+                btn_verificar = st.button("VERIFICAR", use_container_width=True, type="secondary") # Explicito
             
             sel_mes_num = meses_list.index(sel_mes_nome) + 1
             try: check_date = datetime(today.year, sel_mes_num, sel_dia).date()
@@ -429,11 +438,12 @@ else:
             
             t_value = st.number_input("Valor (R$)", min_value=0.0, step=10.0, format="%.2f")
             
-            # CRIA COLUNAS IGUAIS (50/50) PARA ALINHAR BOTÕES
+            # --- CORREÇÃO DE ALINHAMENTO ---
+            # Removemos a div HTML envolvente e usamos colunas puras com type="primary"
             col_act1, col_act2 = st.columns([1, 1])
             
             with col_act1:
-                if st.button("ENVIAR LANÇAMENTO", use_container_width=True):
+                if st.button("ENVIAR LANÇAMENTO", use_container_width=True, type="secondary"):
                     # Se a data ainda não existe no DB, cria
                     if t_date not in tronco_db:
                         tronco_db[t_date] = {'total': 0.0, 'logs': []}
@@ -448,15 +458,14 @@ else:
                     st.rerun()
             
             with col_act2:
-                # O CSS .btn-danger já garante o estilo, a coluna garante o alinhamento
-                st.markdown('<div class="btn-danger">', unsafe_allow_html=True)
-                if st.button("ZERAR ESTE DIA", use_container_width=True):
+                # O botão ZERAR agora é um botão nativo do Streamlit tipo "primary" (que pintamos de vermelho no CSS)
+                # Sem tags HTML em volta -> Alinhamento perfeito
+                if st.button("ZERAR ESTE DIA", use_container_width=True, type="primary"):
                     if t_date in tronco_db:
                         tronco_db[t_date] = {'total': 0.0, 'logs': []}
                         save_data(tronco_db)
                         st.toast(f"Valores do dia {t_date} apagados!", icon="🗑️")
                         st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
 
         st.divider()
         
