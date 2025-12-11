@@ -40,9 +40,7 @@ st.markdown("""
     .stNumberInput > div > div > input { background-color: #1a1a1a; color: white; border: 1px solid #444; text-align: center; }
     
     /* --- ESTILO DOS BOTÕES --- */
-    
-    /* Botão Padrão (Secondary) -> BRANCO (Usado no ENVIAR) */
-    .stButton > button[kind="secondary"] {
+    .stButton > button {
         background-color: #ffffff !important;
         color: #000000 !important;
         font-weight: bold !important;
@@ -53,26 +51,18 @@ st.markdown("""
         text-transform: uppercase;
         transition: all 0.3s ease;
     }
-    .stButton > button[kind="secondary"]:hover {
+    .stButton > button:hover {
         background-color: #cccccc !important;
         transform: translateY(-2px);
     }
-
-    /* Botão Primário (Primary) -> VERMELHO (Usado no ZERAR) */
+    
+    /* Botão Primário (VERMELHO - Usado no Zerar) */
     .stButton > button[kind="primary"] {
         background-color: #e74c3c !important;
         color: #ffffff !important;
-        font-weight: bold !important;
-        border-radius: 4px !important;
-        border: none !important;
-        height: 3em;
-        width: 100%;
-        text-transform: uppercase;
-        transition: all 0.3s ease;
     }
     .stButton > button[kind="primary"]:hover {
         background-color: #c0392b !important;
-        transform: translateY(-2px);
     }
 
     /* Cards */
@@ -157,24 +147,19 @@ BROTHERS = [
 # --- LISTA MESTRE ---
 MASTER_EVENTS = [
     # --- REUNIÕES 2026 (1º SEMESTRE) ---
-    # Fevereiro
     {"date": "06/02", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
     {"date": "20/02", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
-    # Março
     {"date": "06/03", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
     {"date": "20/03", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
-    # Abril
     {"date": "03/04", "type": "Reunião", "name": "Reunião On Line", "year": 2026, "style": "online"},
     {"date": "17/04", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
-    # Maio
     {"date": "01/05", "type": "Reunião", "name": "Reunião On Line", "year": 2026, "style": "online"},
     {"date": "15/05", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
     {"date": "29/05", "type": "Reunião", "name": "Data em Análise", "year": 2026, "style": "analise"},
-    # Junho
     {"date": "05/06", "type": "Reunião", "name": "Reunião On Line", "year": 2026, "style": "online"},
     {"date": "19/06", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
-
-    # --- CIDADES (Fixo todos os anos) ---
+    
+    # --- CIDADES (Fixo) ---
     {"date": "12/12", "type": "Cidade", "city": "Belo Horizonte"},
     {"date": "29/04", "type": "Cidade", "city": "Ipatinga"},
     {"date": "05/11", "type": "Cidade", "city": "Abaeté"},
@@ -188,8 +173,6 @@ MASTER_EVENTS = [
     {"date": "20/01", "type": "Cidade", "city": "Coronel Fabriciano"},
     {"date": "01/03", "type": "Cidade", "city": "Ibirité"},
     {"date": "12/12", "type": "Cidade", "city": "São Francisco do Glória"},
-    
-    # --- LOJA ---
     {"date": "13/05", "type": "Loja", "name": "ARLS Magos do Oriente Nº 149"},
 ]
 
@@ -259,7 +242,6 @@ def create_html_calendar(year, month, events_map):
             else:
                 day_str = f"{day:02d}/{month:02d}"
                 style_class = ""
-                # Verifica se há evento neste dia e aplica estilo
                 if day_str in events_map:
                     evt_type = events_map[day_str]
                     if evt_type == 'presencial': style_class = "cal-day-presencial"
@@ -272,28 +254,84 @@ def create_html_calendar(year, month, events_map):
     html += "</tbody></table></div>"
     return html
 
-# --- INTERFACE ---
+# --- INTERFACE PRINCIPAL ---
 
+# Cabeçalho Geral
+col_h1, col_h2 = st.columns([1, 2])
+with col_h1:
+    try: st.image('logo-magos.png', width=350)
+    except: pass
+with col_h2:
+    st.markdown("<h1 style='margin-top: 60px; font-size: 2.5em;'>MAGOS DO ORIENTE N° 149</h1>", unsafe_allow_html=True)
+
+# Lógica de Login e Abas
 if not st.session_state.get('logged_in', False):
-    col1, col2, col3 = st.columns([1,2,1])
-    with col2:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        try: st.image('logo-magos.png', width=300)
-        except: st.markdown("<div style='text-align:center;'>Logo</div>", unsafe_allow_html=True)
-        st.markdown("<h2 style='text-align: center;'>ACESSO RESTRITO</h2>", unsafe_allow_html=True)
-        pwd = st.text_input("Senha", type="password")
-        if st.button("ENTRAR", use_container_width=True):
-            if pwd == "149":
-                st.session_state['logged_in'] = True
-                st.rerun()
-            else: st.error("Senha incorreta.")
+    
+    # CRIAÇÃO DAS ABAS DE ENTRADA
+    tab_login, tab_externo = st.tabs(["🔐 ACESSO MEMBROS", "💰 LANÇAMENTO AVULSO"])
+    
+    # --- ABA 1: LOGIN (ADMIN/MEMBRO) ---
+    with tab_login:
+        col_l1, col_l2, col_l3 = st.columns([1,2,1])
+        with col_l2:
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align: center;'>ÁREA RESTRITA</h3>", unsafe_allow_html=True)
+            pwd = st.text_input("Senha de Acesso", type="password")
+            if st.button("ENTRAR", use_container_width=True):
+                if pwd == "149":
+                    st.session_state['logged_in'] = True
+                    st.rerun()
+                else: st.error("Senha incorreta.")
+
+    # --- ABA 2: TRONCO EXTERNO (SEM SENHA) ---
+    with tab_externo:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<div style='background-color:#1a1a1a; padding:15px; border-radius:5px; border-left: 4px solid #2ecc71; margin-bottom:20px;'>👋 Bem-vindo! Utilize esta área para realizar lançamentos no tronco sem necessidade de login.</div>", unsafe_allow_html=True)
+        
+        # Carrega DB
+        tronco_db = load_data()
+        meeting_dates = [evt['date'] + "/2026" for evt in MASTER_EVENTS if evt['type'] == "Reunião" and evt.get('year') == 2026]
+        
+        with st.container():
+            col_ext1, col_ext2 = st.columns(2)
+            with col_ext1:
+                ext_date = st.selectbox("Data da Sessão", meeting_dates, key="ext_date")
+            with col_ext2:
+                # Campo de texto livre para visitante/irmão sem senha
+                ext_name = st.text_input("Seu Nome", placeholder="Digite seu nome completo", key="ext_name")
+            
+            ext_value = st.number_input("Valor (R$)", min_value=0.0, step=10.0, format="%.2f", key="ext_val")
+            
+            if st.button("ENVIAR LANÇAMENTO EXTERNO", use_container_width=True):
+                if not ext_name:
+                    st.error("Por favor, digite seu nome.")
+                elif ext_value <= 0:
+                    st.error("O valor deve ser maior que zero.")
+                else:
+                    # Salva no DB compartilhado
+                    if ext_date not in tronco_db:
+                        tronco_db[ext_date] = {'total': 0.0, 'logs': []}
+                    
+                    tronco_db[ext_date]['total'] += ext_value
+                    tronco_db[ext_date]['logs'].append(f"{ext_name} (Externo): R$ {ext_value:.2f}")
+                    
+                    save_data(tronco_db)
+                    st.success("Lançamento realizado com sucesso! Obrigado.")
+                    st.balloons()
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("#### DADOS PARA DEPÓSITO (PIX)")
+        pix_key = "38731048000142"
+        col_pix1, col_pix2 = st.columns([3, 1])
+        with col_pix1: st.code(pix_key, language="text")
+        with col_pix2: st.markdown("Copie a chave.")
+
+# --- SE ESTIVER LOGADO (DASHBOARD COMPLETO) ---
 else:
-    col_h1, col_h2 = st.columns([1, 2])
-    with col_h1:
-        try: st.image('logo-magos.png', width=350)
-        except: pass
-    with col_h2:
-         st.markdown("<h1 style='margin-top: 60px; font-size: 2.5em;'>MAGOS DO ORIENTE N° 149</h1>", unsafe_allow_html=True)
+    # Botão de Sair no topo (opcional, ou apenas refresh)
+    if st.sidebar.button("SAIR"):
+        st.session_state['logged_in'] = False
+        st.rerun()
 
     # --- MENU DE NAVEGAÇÃO SUPERIOR ---
     tabs = st.tabs(["📅 CALENDÁRIO & EVENTOS", "💰 TRONCO", "👷 OBREIROS"])
@@ -340,7 +378,7 @@ else:
                 sel_mes_nome = st.selectbox("Mês", meses_list, index=today.month-1)
             with col_btn: 
                 st.markdown("<br>", unsafe_allow_html=True)
-                btn_verificar = st.button("VERIFICAR", use_container_width=True, type="secondary") # Explicito
+                btn_verificar = st.button("VERIFICAR", use_container_width=True, type="secondary")
             
             sel_mes_num = meses_list.index(sel_mes_nome) + 1
             try: check_date = datetime(today.year, sel_mes_num, sel_dia).date()
@@ -423,9 +461,7 @@ else:
     with tabs[1]:
         st.markdown("### LANÇAMENTO DE TRONCO")
         
-        # Carrega dados do arquivo no início
         tronco_db = load_data()
-
         meeting_dates = [evt['date'] + "/2026" for evt in MASTER_EVENTS if evt['type'] == "Reunião" and evt.get('year') == 2026]
         
         with st.container():
@@ -438,28 +474,20 @@ else:
             
             t_value = st.number_input("Valor (R$)", min_value=0.0, step=10.0, format="%.2f")
             
-            # --- CORREÇÃO DE ALINHAMENTO ---
-            # Removemos a div HTML envolvente e usamos colunas puras com type="primary"
             col_act1, col_act2 = st.columns([1, 1])
-            
             with col_act1:
                 if st.button("ENVIAR LANÇAMENTO", use_container_width=True, type="secondary"):
-                    # Se a data ainda não existe no DB, cria
                     if t_date not in tronco_db:
                         tronco_db[t_date] = {'total': 0.0, 'logs': []}
                     
                     tronco_db[t_date]['total'] += t_value
-                    # Adiciona log simples
                     tronco_db[t_date]['logs'].append(f"{t_brother}: R$ {t_value:.2f}")
                     
-                    # Salva no arquivo
                     save_data(tronco_db)
                     st.toast(f"Lançamento de R$ {t_value:.2f} salvo!", icon="💾")
                     st.rerun()
             
             with col_act2:
-                # O botão ZERAR agora é um botão nativo do Streamlit tipo "primary" (que pintamos de vermelho no CSS)
-                # Sem tags HTML em volta -> Alinhamento perfeito
                 if st.button("ZERAR ESTE DIA", use_container_width=True, type="primary"):
                     if t_date in tronco_db:
                         tronco_db[t_date] = {'total': 0.0, 'logs': []}
@@ -469,10 +497,8 @@ else:
 
         st.divider()
         
-        # Exibição do Resultado
         st.markdown("#### RESUMO DA ARRECADAÇÃO")
         
-        # Recupera dados salvos
         current_data = tronco_db.get(t_date, {'total': 0.0, 'logs': []})
         current_total = current_data['total']
         
@@ -482,7 +508,6 @@ else:
         </div>
         """, unsafe_allow_html=True)
         
-        # Mostra logs recentes do dia
         if current_data['logs']:
             with st.expander("Ver lançamentos deste dia"):
                 for log in current_data['logs']:
