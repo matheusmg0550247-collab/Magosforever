@@ -1,9 +1,10 @@
 import streamlit as st
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import locale
 import calendar
-import json
-import os
+# import json  <-- Não precisamos mais de JSON
+# import os    <-- Não precisamos mais de OS
+from supabase import create_client, Client
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(
@@ -13,25 +14,77 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- ARQUIVO DE BANCO DE DADOS (JSON) ---
-DB_FILE = "dados_tronco.json"
+# --- CONFIGURAÇÃO DE ANO VIGENTE (CORREÇÃO DO CALENDÁRIO) ---
+CURRENT_YEAR = 2026  # Força o ano para evitar erros visuais de 2025
 
-def load_data():
-    """Carrega os dados do arquivo JSON se existir"""
-    if os.path.exists(DB_FILE):
-        try:
-            with open(DB_FILE, "r") as f:
-                return json.load(f)
-        except:
-            return {}
-    return {}
+# --- CONEXÃO SUPABASE ---
+# Certifique-se que no seu .streamlit/secrets.toml esteja assim:
+# [supabase]
+# url = "SUA_URL"
+# key = "SUA_KEY"
 
-def save_data(data):
-    """Salva os dados no arquivo JSON"""
-    with open(DB_FILE, "w") as f:
-        json.dump(data, f)
+@st.cache_resource
+def init_supabase():
+    url = st.secrets["supabase"]["url"]
+    key = st.secrets["supabase"]["key"]
+    return create_client(url, key)
 
-# --- ESTILOS CSS ---
+supabase: Client = init_supabase()
+
+# --- FUNÇÕES DE BANCO DE DADOS (SUPABASE) ---
+
+def fetch_tronco_day(data_sessao):
+    """Busca o total e os logs de um dia específico"""
+    try:
+        # Formata a data para YYYY-MM-DD para o banco
+        date_str = datetime.strptime(data_sessao, "%d/%m").replace(year=CURRENT_YEAR).strftime("%Y-%m-%d")
+        
+        response = supabase.table("tronco_lancamentos")\
+            .select("*")\
+            .eq("data_sessao", date_str)\
+            .execute()
+            
+        data = response.data
+        if not data:
+            return 0.0, []
+        
+        total = sum([float(item['valor']) for item in data])
+        logs = [f"{item['nome_irmao']} ({item.get('tipo', 'membro')}): R$ {float(item['valor']):.2f}" for item in data]
+        return total, logs
+    except Exception as e:
+        st.error(f"Erro ao conectar ao banco: {e}")
+        return 0.0, []
+
+def insert_tronco(data_sessao, nome, valor, tipo="membro"):
+    """Insere um novo registro no banco"""
+    try:
+        # Converte dd/mm para YYYY-MM-DD
+        date_obj = datetime.strptime(data_sessao, "%d/%m").replace(year=CURRENT_YEAR)
+        date_str = date_obj.strftime("%Y-%m-%d")
+        
+        data = {
+            "data_sessao": date_str,
+            "nome_irmao": nome,
+            "valor": valor,
+            "tipo": tipo
+        }
+        supabase.table("tronco_lancamentos").insert(data).execute()
+        return True
+    except Exception as e:
+        st.error(f"Erro ao salvar: {e}")
+        return False
+
+def delete_day_tronco(data_sessao):
+    """Apaga todos os registros de um dia (Zerar)"""
+    try:
+        date_str = datetime.strptime(data_sessao, "%d/%m").replace(year=CURRENT_YEAR).strftime("%Y-%m-%d")
+        supabase.table("tronco_lancamentos").delete().eq("data_sessao", date_str).execute()
+        return True
+    except Exception as e:
+        st.error(f"Erro ao apagar: {e}")
+        return False
+
+# --- ESTILOS CSS (MANTIDO) ---
 st.markdown("""
 <style>
     .stApp { background-color: #000000; color: #e0e0e0; }
@@ -39,7 +92,6 @@ st.markdown("""
     .stTextInput > div > div > input { background-color: #1a1a1a; color: white; border: 1px solid #444; text-align: center; }
     .stNumberInput > div > div > input { background-color: #1a1a1a; color: white; border: 1px solid #444; text-align: center; }
     
-    /* --- ESTILO DOS BOTÕES --- */
     .stButton > button {
         background-color: #ffffff !important;
         color: #000000 !important;
@@ -56,15 +108,11 @@ st.markdown("""
         transform: translateY(-2px);
     }
     
-    /* Botão Primário (VERMELHO - Usado no Zerar) */
     .stButton > button[kind="primary"] {
         background-color: #e74c3c !important;
         color: #ffffff !important;
     }
-    .stButton > button[kind="primary"]:hover {
-        background-color: #c0392b !important;
-    }
-
+    
     /* Cards */
     .result-card {
         background-color: #1a1a1a;
@@ -110,7 +158,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- DADOS DOS IRMÃOS ---
+# --- DADOS DOS IRMÃOS (Mantido igual) ---
 BROTHERS = [
     { "name": "Vinicius Mateus dos Reis", "birth": "27/02", "wedding": "03/02", "init": "21/03", "job": "Contador", "city": "Belo Horizonte", "family": { "wife": "Mariane Fernanda de Freitas Reis", "children": ["Eduardo de Freitas Reis"], "parents": [] } },
     { "name": "Ulisses Ferreira de Souza", "birth": "19/12", "wedding": "22/01", "init": "26/11", "job": "Gerente de Projetos", "city": "Ipatinga", "family": { "wife": "Ana Paula Cardoso (14/06)", "children": ["Annalyce Cardoso", "Anna Gabrielly Cardoso"], "parents": ["Custódia Ferreira de Souza (27/07)"] } },
@@ -144,20 +192,20 @@ BROTHERS = [
     { "name": "Bruno Malagoli", "birth": "08/09", "wedding": None, "init": "18/12", "job": None, "city": None, "family": { "wife": None, "children": [], "parents": ["Maria da Conceição de Assis Malagoli (31/05)"] } }
 ]
 
-# --- LISTA MESTRE ---
+# --- LISTA MESTRE (Datas Ajustadas e Ano Vinculado) ---
 MASTER_EVENTS = [
     # --- REUNIÕES 2026 (1º SEMESTRE) ---
-    {"date": "06/02", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
-    {"date": "20/02", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
-    {"date": "06/03", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
-    {"date": "20/03", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
-    {"date": "03/04", "type": "Reunião", "name": "Reunião On Line", "year": 2026, "style": "online"},
-    {"date": "17/04", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
-    {"date": "01/05", "type": "Reunião", "name": "Reunião On Line", "year": 2026, "style": "online"},
-    {"date": "15/05", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
-    {"date": "29/05", "type": "Reunião", "name": "Data em Análise", "year": 2026, "style": "analise"},
-    {"date": "05/06", "type": "Reunião", "name": "Reunião On Line", "year": 2026, "style": "online"},
-    {"date": "19/06", "type": "Reunião", "name": "Reunião Presencial", "year": 2026, "style": "presencial"},
+    {"date": "06/02", "type": "Reunião", "name": "Reunião Presencial", "year": CURRENT_YEAR, "style": "presencial"},
+    {"date": "20/02", "type": "Reunião", "name": "Reunião Presencial", "year": CURRENT_YEAR, "style": "presencial"},
+    {"date": "06/03", "type": "Reunião", "name": "Reunião Presencial", "year": CURRENT_YEAR, "style": "presencial"},
+    {"date": "20/03", "type": "Reunião", "name": "Reunião Presencial", "year": CURRENT_YEAR, "style": "presencial"},
+    {"date": "03/04", "type": "Reunião", "name": "Reunião On Line", "year": CURRENT_YEAR, "style": "online"},
+    {"date": "17/04", "type": "Reunião", "name": "Reunião Presencial", "year": CURRENT_YEAR, "style": "presencial"},
+    {"date": "01/05", "type": "Reunião", "name": "Reunião On Line", "year": CURRENT_YEAR, "style": "online"},
+    {"date": "15/05", "type": "Reunião", "name": "Reunião Presencial", "year": CURRENT_YEAR, "style": "presencial"},
+    {"date": "29/05", "type": "Reunião", "name": "Data em Análise", "year": CURRENT_YEAR, "style": "analise"},
+    {"date": "05/06", "type": "Reunião", "name": "Reunião On Line", "year": CURRENT_YEAR, "style": "online"},
+    {"date": "19/06", "type": "Reunião", "name": "Reunião Presencial", "year": CURRENT_YEAR, "style": "presencial"},
     
     # --- CIDADES (Fixo) ---
     {"date": "12/12", "type": "Cidade", "city": "Belo Horizonte"},
@@ -288,9 +336,7 @@ if not st.session_state.get('logged_in', False):
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("<div style='background-color:#1a1a1a; padding:15px; border-radius:5px; border-left: 4px solid #2ecc71; margin-bottom:20px;'>👋 Bem-vindo! Utilize esta área para realizar lançamentos no tronco sem necessidade de login.</div>", unsafe_allow_html=True)
         
-        # Carrega DB
-        tronco_db = load_data()
-        meeting_dates = [evt['date'] + "/2026" for evt in MASTER_EVENTS if evt['type'] == "Reunião" and evt.get('year') == 2026]
+        meeting_dates = [evt['date'] for evt in MASTER_EVENTS if evt['type'] == "Reunião" and evt.get('year') == CURRENT_YEAR]
         
         with st.container():
             col_ext1, col_ext2 = st.columns(2)
@@ -308,16 +354,10 @@ if not st.session_state.get('logged_in', False):
                 elif ext_value <= 0:
                     st.error("O valor deve ser maior que zero.")
                 else:
-                    # Salva no DB compartilhado
-                    if ext_date not in tronco_db:
-                        tronco_db[ext_date] = {'total': 0.0, 'logs': []}
-                    
-                    tronco_db[ext_date]['total'] += ext_value
-                    tronco_db[ext_date]['logs'].append(f"{ext_name} (Externo): R$ {ext_value:.2f}")
-                    
-                    save_data(tronco_db)
-                    st.success("Lançamento realizado com sucesso! Obrigado.")
-                    st.balloons()
+                    # SALVAR NO SUPABASE
+                    if insert_tronco(ext_date, ext_name, ext_value, "externo"):
+                        st.success("Lançamento realizado com sucesso! Obrigado.")
+                        st.balloons()
         
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("#### DADOS PARA DEPÓSITO (PIX)")
@@ -328,7 +368,7 @@ if not st.session_state.get('logged_in', False):
 
 # --- SE ESTIVER LOGADO (DASHBOARD COMPLETO) ---
 else:
-    # Botão de Sair no topo (opcional, ou apenas refresh)
+    # Botão de Sair no topo
     if st.sidebar.button("SAIR"):
         st.session_state['logged_in'] = False
         st.rerun()
@@ -338,11 +378,11 @@ else:
 
     # ---------------- TAB 1: CALENDÁRIO & EVENTOS ----------------
     with tabs[0]:
-        st.markdown("### CALENDÁRIO 2026 (1º SEMESTRE)")
+        st.markdown(f"### CALENDÁRIO {CURRENT_YEAR} (1º SEMESTRE)")
         
         events_map = {}
         for evt in MASTER_EVENTS:
-            if evt['type'] == 'Reunião' and evt.get('year') == 2026:
+            if evt['type'] == 'Reunião' and evt.get('year') == CURRENT_YEAR:
                 events_map[evt['date']] = evt.get('style', 'presencial')
 
         st.markdown("""
@@ -354,13 +394,14 @@ else:
         """, unsafe_allow_html=True)
 
         col_cal1, col_cal2, col_cal3 = st.columns(3)
-        with col_cal1: st.markdown(create_html_calendar(2026, 2, events_map), unsafe_allow_html=True) # Fevereiro
-        with col_cal2: st.markdown(create_html_calendar(2026, 3, events_map), unsafe_allow_html=True) # Março
-        with col_cal3: st.markdown(create_html_calendar(2026, 4, events_map), unsafe_allow_html=True) # Abril
+        # CALENDÁRIO FORÇADO PARA 2026
+        with col_cal1: st.markdown(create_html_calendar(CURRENT_YEAR, 2, events_map), unsafe_allow_html=True) # Fevereiro
+        with col_cal2: st.markdown(create_html_calendar(CURRENT_YEAR, 3, events_map), unsafe_allow_html=True) # Março
+        with col_cal3: st.markdown(create_html_calendar(CURRENT_YEAR, 4, events_map), unsafe_allow_html=True) # Abril
         
         col_cal4, col_cal5, col_cal6 = st.columns(3)
-        with col_cal4: st.markdown(create_html_calendar(2026, 5, events_map), unsafe_allow_html=True) # Maio
-        with col_cal5: st.markdown(create_html_calendar(2026, 6, events_map), unsafe_allow_html=True) # Junho
+        with col_cal4: st.markdown(create_html_calendar(CURRENT_YEAR, 5, events_map), unsafe_allow_html=True) # Maio
+        with col_cal5: st.markdown(create_html_calendar(CURRENT_YEAR, 6, events_map), unsafe_allow_html=True) # Junho
         with col_cal6: 
             st.info("Janeiro: Recesso")
 
@@ -457,12 +498,11 @@ else:
                     </div>""", unsafe_allow_html=True)
                     st.code(msgs[0], language="markdown")
 
-    # ---------------- TAB 2: TRONCO (PERSISTENTE) ----------------
+    # ---------------- TAB 2: TRONCO (INTEGRADO COM SUPABASE) ----------------
     with tabs[1]:
         st.markdown("### LANÇAMENTO DE TRONCO")
         
-        tronco_db = load_data()
-        meeting_dates = [evt['date'] + "/2026" for evt in MASTER_EVENTS if evt['type'] == "Reunião" and evt.get('year') == 2026]
+        meeting_dates = [evt['date'] for evt in MASTER_EVENTS if evt['type'] == "Reunião" and evt.get('year') == CURRENT_YEAR]
         
         with st.container():
             col_t1, col_t2 = st.columns(2)
@@ -477,30 +517,24 @@ else:
             col_act1, col_act2 = st.columns([1, 1])
             with col_act1:
                 if st.button("ENVIAR LANÇAMENTO", use_container_width=True, type="secondary"):
-                    if t_date not in tronco_db:
-                        tronco_db[t_date] = {'total': 0.0, 'logs': []}
-                    
-                    tronco_db[t_date]['total'] += t_value
-                    tronco_db[t_date]['logs'].append(f"{t_brother}: R$ {t_value:.2f}")
-                    
-                    save_data(tronco_db)
-                    st.toast(f"Lançamento de R$ {t_value:.2f} salvo!", icon="💾")
-                    st.rerun()
+                    # Salva no Supabase
+                    if insert_tronco(t_date, t_brother, t_value, "membro"):
+                        st.toast(f"Lançamento de R$ {t_value:.2f} salvo no Banco!", icon="💾")
+                        st.rerun()
             
             with col_act2:
                 if st.button("ZERAR ESTE DIA", use_container_width=True, type="primary"):
-                    if t_date in tronco_db:
-                        tronco_db[t_date] = {'total': 0.0, 'logs': []}
-                        save_data(tronco_db)
-                        st.toast(f"Valores do dia {t_date} apagados!", icon="🗑️")
+                    # Apaga do Supabase
+                    if delete_day_tronco(t_date):
+                        st.toast(f"Valores do dia {t_date} apagados do Banco!", icon="🗑️")
                         st.rerun()
 
         st.divider()
         
         st.markdown("#### RESUMO DA ARRECADAÇÃO")
         
-        current_data = tronco_db.get(t_date, {'total': 0.0, 'logs': []})
-        current_total = current_data['total']
+        # Busca dados do Supabase para exibir
+        current_total, current_logs = fetch_tronco_day(t_date)
         
         st.markdown(f"""
         <div style='background-color:#1a1a1a; padding:20px; border-radius:10px; border: 1px solid #444; text-align:center;'>
@@ -508,9 +542,9 @@ else:
         </div>
         """, unsafe_allow_html=True)
         
-        if current_data['logs']:
+        if current_logs:
             with st.expander("Ver lançamentos deste dia"):
-                for log in current_data['logs']:
+                for log in current_logs:
                     st.text(log)
 
         st.markdown("<br>", unsafe_allow_html=True)
