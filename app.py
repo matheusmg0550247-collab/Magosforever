@@ -2,8 +2,6 @@ import streamlit as st
 from datetime import datetime, timedelta, date
 import locale
 import calendar
-# import json  <-- Não precisamos mais de JSON
-# import os    <-- Não precisamos mais de OS
 from supabase import create_client, Client
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
@@ -14,20 +12,24 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- CONFIGURAÇÃO DE ANO VIGENTE (CORREÇÃO DO CALENDÁRIO) ---
-CURRENT_YEAR = 2026  # Força o ano para evitar erros visuais de 2025
+# --- CONFIGURAÇÃO DE ANO VIGENTE ---
+CURRENT_YEAR = 2026
 
 # --- CONEXÃO SUPABASE ---
-# Certifique-se que no seu .streamlit/secrets.toml esteja assim:
+# Certifique-se que seu .streamlit/secrets.toml tem:
 # [supabase]
-# url = "SUA_URL"
-# key = "SUA_KEY"
+# url = "..."
+# key = "..."
 
 @st.cache_resource
 def init_supabase():
-    url = st.secrets["supabase"]["url"]
-    key = st.secrets["supabase"]["key"]
-    return create_client(url, key)
+    try:
+        url = st.secrets["supabase"]["url"]
+        key = st.secrets["supabase"]["key"]
+        return create_client(url, key)
+    except Exception as e:
+        st.error("Erro ao configurar Supabase. Verifique os Secrets.")
+        return None
 
 supabase: Client = init_supabase()
 
@@ -35,6 +37,7 @@ supabase: Client = init_supabase()
 
 def fetch_tronco_day(data_sessao):
     """Busca o total e os logs de um dia específico"""
+    if not supabase: return 0.0, []
     try:
         # Formata a data para YYYY-MM-DD para o banco
         date_str = datetime.strptime(data_sessao, "%d/%m").replace(year=CURRENT_YEAR).strftime("%Y-%m-%d")
@@ -57,6 +60,7 @@ def fetch_tronco_day(data_sessao):
 
 def insert_tronco(data_sessao, nome, valor, tipo="membro"):
     """Insere um novo registro no banco"""
+    if not supabase: return False
     try:
         # Converte dd/mm para YYYY-MM-DD
         date_obj = datetime.strptime(data_sessao, "%d/%m").replace(year=CURRENT_YEAR)
@@ -76,6 +80,7 @@ def insert_tronco(data_sessao, nome, valor, tipo="membro"):
 
 def delete_day_tronco(data_sessao):
     """Apaga todos os registros de um dia (Zerar)"""
+    if not supabase: return False
     try:
         date_str = datetime.strptime(data_sessao, "%d/%m").replace(year=CURRENT_YEAR).strftime("%Y-%m-%d")
         supabase.table("tronco_lancamentos").delete().eq("data_sessao", date_str).execute()
@@ -84,7 +89,7 @@ def delete_day_tronco(data_sessao):
         st.error(f"Erro ao apagar: {e}")
         return False
 
-# --- ESTILOS CSS (MANTIDO) ---
+# --- ESTILOS CSS ---
 st.markdown("""
 <style>
     .stApp { background-color: #000000; color: #e0e0e0; }
@@ -158,7 +163,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- DADOS DOS IRMÃOS (Mantido igual) ---
+# --- DADOS DOS IRMÃOS ---
 BROTHERS = [
     { "name": "Vinicius Mateus dos Reis", "birth": "27/02", "wedding": "03/02", "init": "21/03", "job": "Contador", "city": "Belo Horizonte", "family": { "wife": "Mariane Fernanda de Freitas Reis", "children": ["Eduardo de Freitas Reis"], "parents": [] } },
     { "name": "Ulisses Ferreira de Souza", "birth": "19/12", "wedding": "22/01", "init": "26/11", "job": "Gerente de Projetos", "city": "Ipatinga", "family": { "wife": "Ana Paula Cardoso (14/06)", "children": ["Annalyce Cardoso", "Anna Gabrielly Cardoso"], "parents": ["Custódia Ferreira de Souza (27/07)"] } },
@@ -192,7 +197,7 @@ BROTHERS = [
     { "name": "Bruno Malagoli", "birth": "08/09", "wedding": None, "init": "18/12", "job": None, "city": None, "family": { "wife": None, "children": [], "parents": ["Maria da Conceição de Assis Malagoli (31/05)"] } }
 ]
 
-# --- LISTA MESTRE (Datas Ajustadas e Ano Vinculado) ---
+# --- LISTA MESTRE ---
 MASTER_EVENTS = [
     # --- REUNIÕES 2026 (1º SEMESTRE) ---
     {"date": "06/02", "type": "Reunião", "name": "Reunião Presencial", "year": CURRENT_YEAR, "style": "presencial"},
@@ -272,6 +277,9 @@ def generate_templates(evt):
     return templates
 
 def create_html_calendar(year, month, events_map):
+    # --- CORREÇÃO: Define o Domingo como primeiro dia da semana ---
+    calendar.setfirstweekday(calendar.SUNDAY)
+    
     cal = calendar.monthcalendar(year, month)
     MESES_PT = {
         1: 'JANEIRO', 2: 'FEVEREIRO', 3: 'MARÇO', 4: 'ABRIL', 5: 'MAIO', 6: 'JUNHO',
