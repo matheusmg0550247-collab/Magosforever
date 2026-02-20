@@ -312,10 +312,17 @@ def _default_meeting_index(meeting_events: list[dict], prefer_style: str = "pres
     chosen.sort(key=lambda x: x[1])
     return int(chosen[0][0])
 
-def _reset_other_value_if_needed(prefix: str):
-    """Se o usuário estava em 'Outro valor', zera o campo após envio."""
-    if st.session_state.get(f"{prefix}_val_opt") == "Outro valor":
+def _apply_pending_value_resets(prefix: str) -> None:
+    """Aplica resets pendentes ANTES de montar os widgets (evita StreamlitAPIException)."""
+    if st.session_state.pop(f"{prefix}_reset_other", False):
+        # Importante: isso precisa acontecer antes do st.number_input com a mesma key.
         st.session_state[f"{prefix}_val_other"] = 0.0
+
+
+def _request_other_value_reset(prefix: str) -> None:
+    """Marca para resetar o campo de 'Outro valor' na próxima execução (após envio)."""
+    if st.session_state.get(f"{prefix}_val_opt") == "Outro valor":
+        st.session_state[f"{prefix}_reset_other"] = True
 
 def show_flash_success(key: str):
     """Mostra uma mensagem de sucesso uma única vez (flash message)."""
@@ -440,6 +447,7 @@ if not st.session_state.get('logged_in', False):
                 ext_name = st.text_input("Seu Nome", placeholder="Digite seu nome completo", key="ext_name")
 
             # Valores rápidos: 10, 20 ou outro
+            _apply_pending_value_resets("ext")
             ext_value = tronco_value_widget("ext")
 
             # Clique 1: prepara confirmação
@@ -466,7 +474,7 @@ if not st.session_state.get('logged_in', False):
                     if st.button("✅ CONFIRMAR ENVIO", use_container_width=True, key="ext_confirm_yes"):
                         if insert_tronco(payload["date"], payload["name"], payload["value"], "externo"):
                             st.session_state.pop("ext_confirm_payload", None)
-                            _reset_other_value_if_needed("ext")
+                            _request_other_value_reset("ext")
                             set_flash_success("ext_flash_success", """✅ Tronco enviado e registrado.
 
 🙏 Obrigado! Sua contribuição fortalece o Tronco de Beneficência e ajuda a manter viva a prática da caridade e da Fraternidade. Cada gesto faz diferença. 🤝✨""")
@@ -636,6 +644,7 @@ else:
                 t_brother = st.selectbox("Irmão", brother_names, key="membro_brother")
 
             # Valores rápidos: 10, 20 ou outro
+            _apply_pending_value_resets("membro")
             t_value = tronco_value_widget("membro")
 
             col_act1, col_act2 = st.columns([1, 1])
@@ -662,7 +671,7 @@ else:
                         if st.button("✅ CONFIRMAR ENVIO", use_container_width=True, key="membro_confirm_yes"):
                             if insert_tronco(payload["date"], payload["brother"], payload["value"], "membro"):
                                 st.session_state.pop("membro_confirm_payload", None)
-                                _reset_other_value_if_needed("membro")
+                                _request_other_value_reset("membro")
                                 set_flash_success("membro_flash_success", """✅ Tronco enviado e registrado.
 
 🙏 Obrigado! Sua contribuição fortalece o Tronco de Beneficência e ajuda a manter viva a prática da caridade e da Fraternidade. Cada gesto faz diferença. 🤝✨""")
