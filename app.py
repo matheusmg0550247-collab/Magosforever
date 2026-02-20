@@ -1,5 +1,6 @@
 import streamlit as st
 from datetime import datetime, timedelta, date
+from zoneinfo import ZoneInfo
 import locale
 import calendar
 from supabase import create_client, Client
@@ -269,6 +270,53 @@ def tronco_value_widget(prefix: str) -> float:
         )
     )
 
+
+def _brazil_today() -> date:
+    """Retorna a data de hoje no fuso de Brasília (America/Sao_Paulo)."""
+    try:
+        return datetime.now(ZoneInfo("America/Sao_Paulo")).date()
+    except Exception:
+        # fallback (caso zoneinfo não esteja disponível)
+        return datetime.now().date()
+
+def _parse_ddmm_to_date(ddmm: str, year: int = CURRENT_YEAR) -> date:
+    """Converte 'DD/MM' em date(YYYY, MM, DD)."""
+    try:
+        return datetime.strptime(f"{ddmm}/{year}", "%d/%m/%Y").date()
+    except Exception:
+        # Se vier em outro formato, tenta inferir e, no pior caso, devolve hoje
+        try:
+            return datetime.strptime(ddmm, "%d/%m/%Y").date()
+        except Exception:
+            return _brazil_today()
+
+def _default_meeting_index(meeting_events: list[dict], prefer_style: str = "presencial") -> int:
+    """Escolhe como padrão a reunião futura mais próxima (preferindo 'presencial')."""
+    if not meeting_events:
+        return 0
+    today = _brazil_today()
+
+    indexed = []
+    for i, evt in enumerate(meeting_events):
+        d = _parse_ddmm_to_date(evt.get("date", ""), evt.get("year", CURRENT_YEAR))
+        indexed.append((i, d, (evt.get("style") or "").lower()))
+
+    future = [(i, d, stl) for (i, d, stl) in indexed if d >= today]
+    future_pref = [(i, d, stl) for (i, d, stl) in future if stl == prefer_style.lower()]
+
+    chosen = future_pref or future
+    if not chosen:
+        return 0
+
+    # índice do evento mais próximo
+    chosen.sort(key=lambda x: x[1])
+    return int(chosen[0][0])
+
+def _reset_other_value_if_needed(prefix: str):
+    """Se o usuário estava em 'Outro valor', zera o campo após envio."""
+    if st.session_state.get(f"{prefix}_val_opt") == "Outro valor":
+        st.session_state[f"{prefix}_val_other"] = 0.0
+
 def show_flash_success(key: str):
     """Mostra uma mensagem de sucesso uma única vez (flash message)."""
     msg = st.session_state.pop(key, None)
@@ -379,12 +427,14 @@ if not st.session_state.get('logged_in', False):
         # Mensagem após envio (sem expor lançamentos individuais)
         show_flash_success("ext_flash_success")
 
-        meeting_dates = [evt['date'] for evt in MASTER_EVENTS if evt['type'] == "Reunião" and evt.get('year') == CURRENT_YEAR]
+        meeting_events = [evt for evt in MASTER_EVENTS if evt['type'] == "Reunião" and evt.get('year') == CURRENT_YEAR]
+        meeting_dates = [evt['date'] for evt in meeting_events]
+        default_meeting_idx = _default_meeting_index(meeting_events, prefer_style="presencial")
 
         with st.container():
             col_ext1, col_ext2 = st.columns(2)
             with col_ext1:
-                ext_date = st.selectbox("Data da Sessão", meeting_dates, key="ext_date")
+                ext_date = st.selectbox("Data da Sessão", meeting_dates, index=default_meeting_idx, key="ext_date")
             with col_ext2:
                 # Campo de texto livre para visitante/irmão sem senha
                 ext_name = st.text_input("Seu Nome", placeholder="Digite seu nome completo", key="ext_name")
@@ -416,7 +466,10 @@ if not st.session_state.get('logged_in', False):
                     if st.button("✅ CONFIRMAR ENVIO", use_container_width=True, key="ext_confirm_yes"):
                         if insert_tronco(payload["date"], payload["name"], payload["value"], "externo"):
                             st.session_state.pop("ext_confirm_payload", None)
-                            set_flash_success("ext_flash_success", "✅ Tronco enviado e registrado.")
+                            _reset_other_value_if_needed("ext")
+                            set_flash_success("ext_flash_success", """✅ Tronco enviado e registrado.
+
+🙏 Obrigado! Sua contribuição fortalece o Tronco de Beneficência e ajuda a manter viva a prática da caridade e da Fraternidade. Cada gesto faz diferença. 🤝✨""")
                             st.balloons()
                             st.rerun()
                 with c2:
@@ -570,12 +623,14 @@ else:
         # Mensagem após envio (sem expor lançamentos individuais)
         show_flash_success("membro_flash_success")
 
-        meeting_dates = [evt['date'] for evt in MASTER_EVENTS if evt['type'] == "Reunião" and evt.get('year') == CURRENT_YEAR]
+        meeting_events = [evt for evt in MASTER_EVENTS if evt['type'] == "Reunião" and evt.get('year') == CURRENT_YEAR]
+        meeting_dates = [evt['date'] for evt in meeting_events]
+        default_meeting_idx = _default_meeting_index(meeting_events, prefer_style="presencial")
 
         with st.container():
             col_t1, col_t2 = st.columns(2)
             with col_t1:
-                t_date = st.selectbox("Data da Sessão", meeting_dates, key="membro_date")
+                t_date = st.selectbox("Data da Sessão", meeting_dates, index=default_meeting_idx, key="membro_date")
             with col_t2:
                 brother_names = sorted([b['name'] for b in BROTHERS])
                 t_brother = st.selectbox("Irmão", brother_names, key="membro_brother")
@@ -607,7 +662,10 @@ else:
                         if st.button("✅ CONFIRMAR ENVIO", use_container_width=True, key="membro_confirm_yes"):
                             if insert_tronco(payload["date"], payload["brother"], payload["value"], "membro"):
                                 st.session_state.pop("membro_confirm_payload", None)
-                                set_flash_success("membro_flash_success", "✅ Tronco enviado e registrado.")
+                                _reset_other_value_if_needed("membro")
+                                set_flash_success("membro_flash_success", """✅ Tronco enviado e registrado.
+
+🙏 Obrigado! Sua contribuição fortalece o Tronco de Beneficência e ajuda a manter viva a prática da caridade e da Fraternidade. Cada gesto faz diferença. 🤝✨""")
                                 st.toast("Tronco enviado e registrado.", icon="✅")
                                 st.rerun()
                     with c2:
