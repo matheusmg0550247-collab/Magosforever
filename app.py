@@ -36,27 +36,28 @@ supabase: Client = init_supabase()
 # --- FUNÇÕES DE BANCO DE DADOS (SUPABASE) ---
 
 def fetch_tronco_day(data_sessao):
-    """Busca o total e os logs de um dia específico"""
-    if not supabase: return 0.0, []
+    """Busca o total arrecadado de um dia específico.
+
+    Observação: por privacidade, este app NÃO exibe os lançamentos individuais no site,
+    apenas o total do dia.
+    """
+    if not supabase:
+        return 0.0
     try:
         # Formata a data para YYYY-MM-DD para o banco
         date_str = datetime.strptime(data_sessao, "%d/%m").replace(year=CURRENT_YEAR).strftime("%Y-%m-%d")
-        
+
         response = supabase.table("tronco_lancamentos")\
-            .select("*")\
+            .select("valor")\
             .eq("data_sessao", date_str)\
             .execute()
-            
-        data = response.data
-        if not data:
-            return 0.0, []
-        
-        total = sum([float(item['valor']) for item in data])
-        logs = [f"{item['nome_irmao']} ({item.get('tipo', 'membro')}): R$ {float(item['valor']):.2f}" for item in data]
-        return total, logs
+
+        data = response.data or []
+        total = sum(float(item.get("valor", 0) or 0) for item in data)
+        return total
     except Exception as e:
         st.error(f"Erro ao conectar ao banco: {e}")
-        return 0.0, []
+        return 0.0
 
 def insert_tronco(data_sessao, nome, valor, tipo="membro"):
     """Insere um novo registro no banco"""
@@ -246,6 +247,37 @@ def format_list(names):
     if len(names) == 1: return names[0]
     return ", ".join(names[:-1]) + " e " + names[-1]
 
+def tronco_value_widget(prefix: str) -> float:
+    """Widget de valor do Tronco com opções rápidas (10, 20, ou outro valor)."""
+    opt = st.radio(
+        "Valor do Tronco",
+        ["R$ 10", "R$ 20", "Outro valor"],
+        horizontal=True,
+        key=f"{prefix}_val_opt"
+    )
+    if opt == "R$ 10":
+        return 10.0
+    if opt == "R$ 20":
+        return 20.0
+    return float(
+        st.number_input(
+            "Outro valor (R$)",
+            min_value=0.0,
+            step=1.0,
+            format="%.2f",
+            key=f"{prefix}_val_other"
+        )
+    )
+
+def show_flash_success(key: str):
+    """Mostra uma mensagem de sucesso uma única vez (flash message)."""
+    msg = st.session_state.pop(key, None)
+    if msg:
+        st.success(msg)
+
+def set_flash_success(key: str, msg: str):
+    st.session_state[key] = msg
+
 def generate_templates(evt):
     names = evt.get('names', [evt.get('name')]) if evt.get('names') else [evt.get('name')]
     names_str = format_list(names)
@@ -343,9 +375,12 @@ if not st.session_state.get('logged_in', False):
     with tab_externo:
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("<div style='background-color:#1a1a1a; padding:15px; border-radius:5px; border-left: 4px solid #2ecc71; margin-bottom:20px;'>👋 Bem-vindo! Utilize esta área para realizar lançamentos no tronco sem necessidade de login.</div>", unsafe_allow_html=True)
-        
+
+        # Mensagem após envio (sem expor lançamentos individuais)
+        show_flash_success("ext_flash_success")
+
         meeting_dates = [evt['date'] for evt in MASTER_EVENTS if evt['type'] == "Reunião" and evt.get('year') == CURRENT_YEAR]
-        
+
         with st.container():
             col_ext1, col_ext2 = st.columns(2)
             with col_ext1:
@@ -353,19 +388,41 @@ if not st.session_state.get('logged_in', False):
             with col_ext2:
                 # Campo de texto livre para visitante/irmão sem senha
                 ext_name = st.text_input("Seu Nome", placeholder="Digite seu nome completo", key="ext_name")
-            
-            ext_value = st.number_input("Valor (R$)", min_value=0.0, step=10.0, format="%.2f", key="ext_val")
-            
-            if st.button("ENVIAR LANÇAMENTO EXTERNO", use_container_width=True):
+
+            # Valores rápidos: 10, 20 ou outro
+            ext_value = tronco_value_widget("ext")
+
+            # Clique 1: prepara confirmação
+            if st.button("ENVIAR LANÇAMENTO EXTERNO", use_container_width=True, key="ext_send_btn"):
                 if not ext_name:
                     st.error("Por favor, digite seu nome.")
                 elif ext_value <= 0:
                     st.error("O valor deve ser maior que zero.")
                 else:
-                    # SALVAR NO SUPABASE
-                    if insert_tronco(ext_date, ext_name, ext_value, "externo"):
-                        st.success("Lançamento realizado com sucesso! Obrigado.")
-                        st.balloons()
+                    st.session_state["ext_confirm_payload"] = {
+                        "date": ext_date,
+                        "name": ext_name,
+                        "value": float(ext_value)
+                    }
+
+            # Clique 2: confirma e envia
+            payload = st.session_state.get("ext_confirm_payload")
+            if payload:
+                st.warning(
+                    f"Confirma o envio do Tronco de R$ {payload['value']:.2f} para a sessão {payload['date']} em nome de {payload['name']}?"
+                )
+                c1, c2 = st.columns(2)
+                with c1:
+                    if st.button("✅ CONFIRMAR ENVIO", use_container_width=True, key="ext_confirm_yes"):
+                        if insert_tronco(payload["date"], payload["name"], payload["value"], "externo"):
+                            st.session_state.pop("ext_confirm_payload", None)
+                            set_flash_success("ext_flash_success", "✅ Tronco enviado e registrado.")
+                            st.balloons()
+                            st.rerun()
+                with c2:
+                    if st.button("❌ CANCELAR", use_container_width=True, key="ext_confirm_no"):
+                        st.session_state.pop("ext_confirm_payload", None)
+                        st.info("Envio cancelado.")
         
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("#### DADOS PARA DEPÓSITO (PIX)")
@@ -509,51 +566,74 @@ else:
     # ---------------- TAB 2: TRONCO (INTEGRADO COM SUPABASE) ----------------
     with tabs[1]:
         st.markdown("### LANÇAMENTO DE TRONCO")
-        
+
+        # Mensagem após envio (sem expor lançamentos individuais)
+        show_flash_success("membro_flash_success")
+
         meeting_dates = [evt['date'] for evt in MASTER_EVENTS if evt['type'] == "Reunião" and evt.get('year') == CURRENT_YEAR]
-        
+
         with st.container():
             col_t1, col_t2 = st.columns(2)
             with col_t1:
-                t_date = st.selectbox("Data da Sessão", meeting_dates)
+                t_date = st.selectbox("Data da Sessão", meeting_dates, key="membro_date")
             with col_t2:
                 brother_names = sorted([b['name'] for b in BROTHERS])
-                t_brother = st.selectbox("Irmão", brother_names)
-            
-            t_value = st.number_input("Valor (R$)", min_value=0.0, step=10.0, format="%.2f")
-            
+                t_brother = st.selectbox("Irmão", brother_names, key="membro_brother")
+
+            # Valores rápidos: 10, 20 ou outro
+            t_value = tronco_value_widget("membro")
+
             col_act1, col_act2 = st.columns([1, 1])
             with col_act1:
-                if st.button("ENVIAR LANÇAMENTO", use_container_width=True, type="secondary"):
-                    # Salva no Supabase
-                    if insert_tronco(t_date, t_brother, t_value, "membro"):
-                        st.toast(f"Lançamento de R$ {t_value:.2f} salvo no Banco!", icon="💾")
-                        st.rerun()
-            
+                # Clique 1: prepara confirmação
+                if st.button("ENVIAR LANÇAMENTO", use_container_width=True, type="secondary", key="membro_send_btn"):
+                    if t_value <= 0:
+                        st.error("O valor deve ser maior que zero.")
+                    else:
+                        st.session_state["membro_confirm_payload"] = {
+                            "date": t_date,
+                            "brother": t_brother,
+                            "value": float(t_value)
+                        }
+
+                # Clique 2: confirma e envia
+                payload = st.session_state.get("membro_confirm_payload")
+                if payload:
+                    st.warning(
+                        f"Confirma o envio do Tronco de R$ {payload['value']:.2f} para a sessão {payload['date']} (Ir. {payload['brother']})?"
+                    )
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        if st.button("✅ CONFIRMAR ENVIO", use_container_width=True, key="membro_confirm_yes"):
+                            if insert_tronco(payload["date"], payload["brother"], payload["value"], "membro"):
+                                st.session_state.pop("membro_confirm_payload", None)
+                                set_flash_success("membro_flash_success", "✅ Tronco enviado e registrado.")
+                                st.toast("Tronco enviado e registrado.", icon="✅")
+                                st.rerun()
+                    with c2:
+                        if st.button("❌ CANCELAR", use_container_width=True, key="membro_confirm_no"):
+                            st.session_state.pop("membro_confirm_payload", None)
+                            st.info("Envio cancelado.")
+
             with col_act2:
-                if st.button("ZERAR ESTE DIA", use_container_width=True, type="primary"):
+                if st.button("ZERAR ESTE DIA", use_container_width=True, type="primary", key="membro_zerar_btn"):
                     # Apaga do Supabase
                     if delete_day_tronco(t_date):
                         st.toast(f"Valores do dia {t_date} apagados do Banco!", icon="🗑️")
                         st.rerun()
 
         st.divider()
-        
+
         st.markdown("#### RESUMO DA ARRECADAÇÃO")
-        
-        # Busca dados do Supabase para exibir
-        current_total, current_logs = fetch_tronco_day(t_date)
-        
+
+        # Busca dados do Supabase para exibir (apenas total do dia)
+        current_total = fetch_tronco_day(t_date)
+
         st.markdown(f"""
         <div style='background-color:#1a1a1a; padding:20px; border-radius:10px; border: 1px solid #444; text-align:center;'>
             <h2 style='color:#2ecc71; margin:0;'>{t_date} - Tronco arrecadado: {current_total:.2f} reais</h2>
         </div>
         """, unsafe_allow_html=True)
-        
-        if current_logs:
-            with st.expander("Ver lançamentos deste dia"):
-                for log in current_logs:
-                    st.text(log)
 
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("#### DADOS PARA DEPÓSITO (PIX)")
