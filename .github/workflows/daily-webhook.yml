@@ -1,0 +1,33 @@
+name: Robo Magos - Datas Comemorativas Diarias
+
+on:
+  schedule:
+    # 11:00 UTC = 08:00 BRT (horario de Brasilia, sem horario de verao)
+    - cron: "0 11 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Forcar DD/MM (opcional, para teste)"
+        required: false
+        default: ""
+
+jobs:
+  disparar-webhook:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Rodar magos_webhook_sender
+        env:
+          MAGOS_N8N_WEBHOOK: ${{ secrets.MAGOS_N8N_WEBHOOK }}
+        run: |
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            python magos_webhook_sender.py --send --date "${{ github.event.inputs.date }}"
+          else
+            python magos_webhook_sender.py --send
+          fi
