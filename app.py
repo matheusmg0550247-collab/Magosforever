@@ -167,7 +167,7 @@ st.markdown("""
 
 # --- DADOS DOS IRMÃOS ---
 BROTHERS = [
-    { "name": "Vinicius Mateus dos Reis", "birth": "27/02", "wedding": "03/02", "init": "21/03", "job": "Contador", "city": "Belo Horizonte", "family": { "wife": "Mariane Fernanda de Freitas Reis (22/02)", "children": ["Eduardo de Freitas Reis (05/02)"], "parents": [] } },
+    { "name": "Vinicius Mateus dos Reis", "birth": "27/02", "wedding": "03/02", "init": "21/03", "job": "Contador", "city": "Belo Horizonte", "family": { "wife": "Mariane Fernanda de Freitas Reis (23/02)", "children": ["Eduardo de Freitas Reis (05/02)"], "parents": [] } },
     { "name": "Ulisses Ferreira de Souza", "birth": "19/12", "wedding": "22/01", "init": "26/11", "job": "Gerente de Projetos", "city": "Ipatinga", "family": { "wife": "Ana Paula Cardoso (14/06)", "children": ["Annalyce Cardoso (06/04)", "Anna Gabrielly Cardoso (17/11)"], "parents": ["Custódia Ferreira de Souza (27/07)"] } },
     { "name": "Thiago Henrique Batista Duarte", "birth": "30/11", "wedding": "05/05", "init": "03/12", "job": "Analista de TI", "city": "Belo Horizonte", "family": { "wife": "Franciane Cristina Toledo Duarte (14/12)", "children": ["Eduardo Toledo Duarte (09/06)", "Larissa Toledo Duarte (29/07)"], "parents": [] } },
     { "name": "Thiago Bustamante Bicalho", "birth": "08/08", "wedding": None, "init": "07/06", "job": "Assistente Administrativo", "city": "Belo Horizonte", "family": { "wife": "Natanne Pereira Rodrigues", "children": [], "parents": ["Ana Maria Fonseca Bustamante Bicalho"] } },
