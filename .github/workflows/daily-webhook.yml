@@ -2,8 +2,12 @@ name: Robo Magos - Datas Comemorativas Diarias
 
 on:
   schedule:
-    # 11:00 UTC = 08:00 BRT (horario de Brasilia, sem horario de verao)
-    - cron: "0 11 * * *"
+    # 06:00 UTC = 03:00 BRT (horario de Brasilia, sem horario de verao).
+    # Roda BEM antes das 08:00 BRT para garantir que o webhook chegue ao n8n
+    # antes de qualquer scheduler interno do fluxo. Antes era 11:00 UTC e
+    # disputava com o checador do n8n, gerando mensagens duplicadas
+    # ("Data comemorativa nao encontrada" + depois "...observada").
+    - cron: "0 6 * * *"
   workflow_dispatch:
     inputs:
       date:

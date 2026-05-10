@@ -298,6 +298,71 @@
             margin-bottom: 30px;
         }
 
+        .meetings-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+            padding: 18px 14px;
+            background: linear-gradient(180deg, rgba(15,23,42,0.55), rgba(15,23,42,0.25));
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+        .meetings-summary .ms-month {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 10px 8px;
+            text-align: center;
+        }
+        .meetings-summary .ms-month-name {
+            font-family: 'Cinzel', serif;
+            font-size: 0.85em;
+            letter-spacing: 3px;
+            color: var(--gold);
+            background: rgba(15,23,42,0.6);
+            padding: 6px 4px;
+            border-radius: 3px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .meetings-summary .ms-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 3px;
+            padding: 6px 8px;
+            margin-top: 6px;
+            font-size: 0.78em;
+        }
+        .meetings-summary .ms-row .ms-day {
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.85em;
+            letter-spacing: 1px;
+            min-width: 56px;
+            text-align: left;
+        }
+        .meetings-summary .ms-row .ms-tag {
+            color: #fff;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.7em;
+            padding: 3px 8px;
+            border-radius: 3px;
+            background: var(--accent-red);
+        }
+        .meetings-summary .ms-row.ms-online .ms-tag {
+            background: var(--accent-green);
+        }
+        .meetings-summary .ms-row.ms-analise .ms-tag {
+            background: var(--accent-orange);
+        }
+
         .cal-card {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -831,7 +896,7 @@
                 <div id="extSuccess" class="alert alert-success" style="display:none;"></div>
                 <div class="form-group">
                     <label>Data da Sessao</label>
-                    <select id="extDate"><option value="06/02">06/02</option><option value="20/02">20/02</option><option value="06/03">06/03</option><option value="20/03">20/03</option><option value="03/04">03/04</option><option value="17/04">17/04</option><option value="01/05">01/05</option><option value="15/05">15/05</option><option value="29/05">29/05</option><option value="05/06">05/06</option><option value="19/06">19/06</option></select>
+                    <select id="extDate"><option value="06/02">06/02</option><option value="20/02">20/02</option><option value="06/03">06/03</option><option value="20/03">20/03</option><option value="03/04">03/04</option><option value="17/04">17/04</option><option value="01/05">01/05</option><option value="15/05">15/05</option><option value="29/05">29/05</option><option value="05/06">05/06</option><option value="19/06">19/06</option><option value="03/07">03/07</option></select>
                 </div>
                 <div class="form-group">
                     <label>Seu Nome</label>
@@ -873,6 +938,7 @@
                 <span><span class="legend-dot" style="background:var(--accent-green)"></span> Online</span>
                 <span><span class="legend-dot" style="background:var(--accent-orange)"></span> Em Analise</span>
             </div>
+            <div class="meetings-summary" id="meetingsSummary"></div>
             <div class="calendar-grid" id="calendarGrid"></div>
 
             <div class="divider"></div>
@@ -899,7 +965,7 @@
             <div class="tronco-grid">
                 <div class="form-group">
                     <label>Data da Sessao</label>
-                    <select id="membroDate"><option value="06/02">06/02</option><option value="20/02">20/02</option><option value="06/03">06/03</option><option value="20/03">20/03</option><option value="03/04">03/04</option><option value="17/04">17/04</option><option value="01/05">01/05</option><option value="15/05">15/05</option><option value="29/05">29/05</option><option value="05/06">05/06</option><option value="19/06">19/06</option></select>
+                    <select id="membroDate"><option value="06/02">06/02</option><option value="20/02">20/02</option><option value="06/03">06/03</option><option value="20/03">20/03</option><option value="03/04">03/04</option><option value="17/04">17/04</option><option value="01/05">01/05</option><option value="15/05">15/05</option><option value="29/05">29/05</option><option value="05/06">05/06</option><option value="19/06">19/06</option><option value="03/07">03/07</option></select>
                 </div>
                 <div class="form-group">
                     <label>Irmao</label>
@@ -1029,9 +1095,10 @@
         { date: "17/04", type: "Reunião", name: "Reunião Presencial", year: 2026, style: "presencial" },
         { date: "01/05", type: "Reunião", name: "Reunião On Line", year: 2026, style: "online" },
         { date: "15/05", type: "Reunião", name: "Reunião Presencial", year: 2026, style: "presencial" },
-        { date: "29/05", type: "Reunião", name: "Data em Análise", year: 2026, style: "analise" },
+        { date: "29/05", type: "Reunião", name: "Reunião Presencial", year: 2026, style: "presencial" },
         { date: "05/06", type: "Reunião", name: "Reunião On Line", year: 2026, style: "online" },
         { date: "19/06", type: "Reunião", name: "Reunião Presencial", year: 2026, style: "presencial" },
+        { date: "03/07", type: "Reunião", name: "Reunião Presencial", year: 2026, style: "presencial" },
         { date: "12/12", type: "Cidade", city: "Belo Horizonte" },
         { date: "29/04", type: "Cidade", city: "Ipatinga" },
         { date: "05/11", type: "Cidade", city: "Abaeté" },
@@ -1145,10 +1212,10 @@
         const grid = document.getElementById('calendarGrid');
         const eventsMap = {};
         MASTER_EVENTS.forEach(e => {
-            if (e.type === 'Reuniao' && e.year === CURRENT_YEAR) eventsMap[e.date] = e.style;
+            if (e.type === 'Reunião' && e.year === CURRENT_YEAR) eventsMap[e.date] = e.style;
         });
 
-        const months = [2, 3, 4, 5, 6];
+        const months = [2, 3, 4, 5, 6, 7];
         let html = '';
         months.forEach(m => {
             html += buildCalendarMonth(CURRENT_YEAR, m, eventsMap);
@@ -1156,6 +1223,47 @@
         // Add January note
         html += `<div class="cal-card" style="display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.1em;">Janeiro: Recesso</div>`;
         grid.innerHTML = html;
+
+        renderMeetingsSummary();
+    }
+
+    /** Renderiza o resumo de reuniões no topo do calendário (estilo do banner enviado pela Loja) */
+    function renderMeetingsSummary() {
+        const container = document.getElementById('meetingsSummary');
+        if (!container) return;
+        // Só reuniões do CURRENT_YEAR.
+        const meetings = MASTER_EVENTS.filter(e => e.type === 'Reunião' && e.year === CURRENT_YEAR);
+        if (!meetings.length) {
+            container.style.display = 'none';
+            return;
+        }
+        container.style.display = 'grid';
+        // Agrupa por mês (numérico 1-12)
+        const byMonth = {};
+        meetings.forEach(m => {
+            const [, mm] = m.date.split('/').map(Number);
+            (byMonth[mm] = byMonth[mm] || []).push(m);
+        });
+        const monthsOrder = Object.keys(byMonth).map(Number).sort((a,b)=>a-b);
+        const WEEKDAYS = ['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
+        let html = '';
+        monthsOrder.forEach(mm => {
+            const monthName = MESES[mm - 1].toUpperCase();
+            html += `<div class="ms-month"><div class="ms-month-name">${monthName}</div>`;
+            byMonth[mm].forEach(m => {
+                const [dd] = m.date.split('/').map(Number);
+                const dt = new Date(CURRENT_YEAR, mm - 1, dd);
+                const wd = WEEKDAYS[dt.getDay()];
+                const isOnline = m.style === 'online';
+                const isAnalise = m.style === 'analise';
+                const cls = isOnline ? 'ms-online' : (isAnalise ? 'ms-analise' : '');
+                const label = m.name && /virtual|online/i.test(m.name) ? 'Reunião Virtual'
+                            : (isOnline ? 'Reunião Virtual' : (isAnalise ? (m.name || 'A definir') : 'Reunião'));
+                html += `<div class="ms-row ${cls}"><span class="ms-day">${wd} ${String(dd).padStart(2,'0')}</span><span class="ms-tag">${label}</span></div>`;
+            });
+            html += `</div>`;
+        });
+        container.innerHTML = html;
     }
 
     function buildCalendarMonth(year, month, eventsMap) {
@@ -1226,7 +1334,7 @@
             case 'Profissao': return `Homenagem ao(s) Ir(s). ${namesStr} pelo Dia do ${evt.job}!`;
             case 'Cidade': return `Parabens a cidade de ${evt.city} pelo aniversario!${cityBros}`;
             case 'Loja': return `Parabens ARLS Magos do Oriente N. 149!`;
-            case 'Reuniao': return `Lembrete: Hoje temos ${evt.name} as 20h.`;
+            case 'Reunião': return `Lembrete: Hoje temos ${evt.name} as 20h.`;
             default: return 'Parabens!';
         }
     }
@@ -1313,8 +1421,8 @@
         foundEvents.forEach(evt => {
             const wkDay = DIAS_SEMANA[evt.fullDate.getDay()];
             const title = evt.city || evt.job || formatList(evt.names || [evt.name]);
-            const isReuniao = evt.type === 'Reuniao';
-            const displayTitle = (evt.type === 'Loja' || evt.type === 'Reuniao') ? evt.name : title;
+            const isReuniao = evt.type === 'Reunião';
+            const displayTitle = (evt.type === 'Loja' || evt.type === 'Reunião') ? evt.name : title;
             const template = generateTemplate(evt);
 
             html += `<div class="event-card ${isReuniao ? 'reuniao' : ''}">
@@ -1331,7 +1439,7 @@
     // TRONCO
     // =============================================
     function populateTroncoSelects() {
-        const meetingDates = MASTER_EVENTS.filter(e => e.type === 'Reuniao' && e.year === CURRENT_YEAR).map(e => e.date);
+        const meetingDates = MASTER_EVENTS.filter(e => e.type === 'Reunião' && e.year === CURRENT_YEAR).map(e => e.date);
         ['membroDate', 'extDate'].forEach(id => {
             const sel = document.getElementById(id);
             sel.innerHTML = '';
@@ -1533,7 +1641,7 @@
         // Master events
         MASTER_EVENTS.forEach(evt => {
             if (evt.date === dayStr) {
-                if (evt.type === 'Reuniao') events.push({ type: 'Reuniao', message: evt.name });
+                if (evt.type === 'Reunião') events.push({ type: 'Reunião', message: evt.name });
                 if (evt.type === 'Cidade') events.push({ type: 'Cidade', message: `Aniversario da cidade de ${evt.city}` });
                 if (evt.type === 'Loja') events.push({ type: 'Loja', message: 'Aniversario da ARLS Magos do Oriente N. 149!' });
             }

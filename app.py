@@ -229,7 +229,9 @@ MASTER_EVENTS = [
     {"date": "20/01", "type": "Cidade", "city": "Coronel Fabriciano"},
     {"date": "01/03", "type": "Cidade", "city": "Ibirité"},
     {"date": "12/12", "type": "Cidade", "city": "São Francisco do Glória"},
-    {"date": "13/05", "type": "Loja", "name": "ARLS Magos do Oriente Nº 149"},
+    # Aniversário de fundação da Loja: 11/05/1988 (confirmado pela conversa do
+    # grupo em 11/05/2025: "Magos do Oriente, 37 anos de existência").
+    {"date": "11/05", "type": "Loja", "name": "ARLS Magos do Oriente Nº 149"},
 ]
 
 PROFESSION_DATES = {
@@ -241,6 +243,19 @@ PROFESSION_DATES = {
     "Advogado": "11/08", "Motorista": "25/07", "Representante Comercial": "01/10",
     "Empresário": "05/10", "Vendedor": "01/10", "Oficial Judiciário": "25/03"
 }
+
+# --- COMENDAS / CONDECORAÇÕES ---
+# Use este registro para anotar comendas, medalhas e jubileus de irmãos.
+# Cada item:
+#   {"date": "DD/MM", "type": "Comenda", "name": "Nome da comenda",
+#    "brother": "Nome completo do Ir.", "year": 2024 (opcional)}
+# Quando preenchido, o robô passa a anunciar automaticamente no aniversário
+# de cada comenda (mesmo formato dos demais eventos).
+COMENDAS = [
+    # Exemplo (descomente e adapte conforme ata da Loja):
+    # {"date": "30/05", "type": "Comenda", "name": "Mestre Maçom",
+    #  "brother": "Dante Carvalho Rodrigues", "year": 2025},
+]
 
 # --- FUNÇÕES AUXILIARES ---
 
